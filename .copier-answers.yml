@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v0.11.2
+_src_path: gh:FollowTheProcess/go_copier
+author_email: tomfleet2018@gmail.com
+author_name: Tom Fleet
+create_github_repo: false
+description: A lightweight test helper package
+github_url: https://github.com/FollowTheProcess/test
+github_username: FollowTheProcess
+initialise_git_repo: true
+license: MIT License
+project_name: test
+project_slug: test
+project_type: library

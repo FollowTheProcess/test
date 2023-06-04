@@ -43,4 +43,12 @@ func TestTest(t *testing.T) {
 	shouldPass(func(tb testing.TB) { test.Equal(tb, 42, 42) })
 	shouldPass(func(tb testing.TB) { test.Equal(tb, true, true) })
 	shouldPass(func(tb testing.TB) { test.Equal(tb, 3.14, 3.14) })
+
+	shouldPass(func(tb testing.TB) {
+		test.EqualFunc(tb, "something", "equal", func(got, want string) bool { return true })
+	})
+
+	shouldPass(func(tb testing.TB) {
+		test.EqualFunc(tb, 42, 42, func(got, want int) bool { return true })
+	})
 }

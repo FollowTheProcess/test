@@ -30,7 +30,6 @@ linters:
     - staticcheck
     - tagliatelle
     - tenv
-    - thelper
     - unconvert
     - unparam
     - unused

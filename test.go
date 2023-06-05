@@ -42,3 +42,11 @@ func NotEqualFunc[T any](t testing.TB, got, want T, equal func(got, want T) bool
 		t.Fatalf("\nValues were equal:\t%+v\n", got)
 	}
 }
+
+// Ok fails if err != nil.
+func Ok(t testing.TB, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("\nGot:\t%v\nWanted:\tnil\n", err)
+	}
+}

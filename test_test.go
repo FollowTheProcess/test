@@ -2,6 +2,7 @@ package test_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -53,6 +54,8 @@ func TestPass(t *testing.T) {
 	shouldPass(func(tb testing.TB) { test.NotEqual(tb, 42, 27) })
 	shouldPass(func(tb testing.TB) { test.NotEqual(tb, true, false) })
 	shouldPass(func(tb testing.TB) { test.NotEqual(tb, 3.14, 8.67) })
+
+	shouldPass(func(tb testing.TB) { test.Ok(tb, nil) })
 
 	shouldPass(func(tb testing.TB) {
 		test.EqualFunc(tb, "something", "equal", func(got, want string) bool { return true })
@@ -110,6 +113,8 @@ func TestFail(t *testing.T) {
 	shouldFail(func(tb testing.TB) { test.NotEqual(tb, 42, 42) })
 	shouldFail(func(tb testing.TB) { test.NotEqual(tb, true, true) })
 	shouldFail(func(tb testing.TB) { test.NotEqual(tb, 3.14, 3.14) })
+
+	shouldFail(func(tb testing.TB) { test.Ok(tb, errors.New("uh oh")) })
 
 	shouldFail(func(tb testing.TB) {
 		test.EqualFunc(tb, "something", "different", func(got, want string) bool { return false })

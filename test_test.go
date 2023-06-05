@@ -83,6 +83,13 @@ func TestPass(t *testing.T) {
 	shouldPass(func(tb testing.TB) {
 		test.NotEqualFunc(tb, []string{"hello"}, []string{"something", "else"}, func(got, want []string) bool { return false })
 	})
+
+	shouldPass(func(tb testing.TB) {
+		test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "dave"})
+	})
+	shouldPass(func(tb testing.TB) {
+		test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "dave"})
+	})
 }
 
 func TestFail(t *testing.T) {
@@ -144,5 +151,12 @@ func TestFail(t *testing.T) {
 
 	shouldFail(func(tb testing.TB) {
 		test.NotEqualFunc(tb, []int{42}, []int{42}, func(got, want []int) bool { return true })
+	})
+
+	shouldFail(func(tb testing.TB) {
+		test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "john"})
+	})
+	shouldFail(func(tb testing.TB) {
+		test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "john"})
 	})
 }

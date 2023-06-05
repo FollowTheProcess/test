@@ -4,6 +4,8 @@ package test
 
 import (
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Equal fails if got != want.
@@ -48,11 +50,11 @@ func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 func Ok(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {
-		t.Fatalf("\nGot:\t%v\nWanted:\tnil\n", err)
+		t.Fatalf("\nGot error:\t%v\nWanted:\tnil\n", err)
 	}
 }
 
-// True fails if v is not true.
+// True fails if v is false.
 func True(t testing.TB, v bool) {
 	t.Helper()
 	if !v {
@@ -60,10 +62,18 @@ func True(t testing.TB, v bool) {
 	}
 }
 
-// False fails if v is not true.
+// False fails if v is true.
 func False(t testing.TB, v bool) {
 	t.Helper()
 	if v {
 		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v", v, false)
+	}
+}
+
+// Diff fails if got != want and provides a rich diff.
+func Diff[T any](t testing.TB, got, want T) {
+	t.Helper()
+	if diff := cmp.Diff(want, got, cmp.AllowUnexported(got, want)); diff != "" {
+		t.Fatalf("Mismatch (-want, +got):\n%s", diff)
 	}
 }

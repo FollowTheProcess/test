@@ -39,6 +39,9 @@ func TestSomething(t *testing.T) {
 
     test.True(t, true) // Passes
     test.False(t, true) // Fails
+
+    // Just like the good old reflect.DeepEqual, but with a nicer format
+    test.DeepEqual(t, []string{"hello"}, []string{"world"}) // Fails
 }
 ```
 

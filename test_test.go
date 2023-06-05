@@ -96,6 +96,8 @@ func TestPass(t *testing.T) {
 	shouldPass(func(tb testing.TB) {
 		test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "dave"})
 	})
+
+	shouldPass(func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"hello"}) })
 }
 
 func TestFail(t *testing.T) {
@@ -171,4 +173,6 @@ func TestFail(t *testing.T) {
 	shouldFail(func(tb testing.TB) {
 		test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "john"})
 	})
+
+	shouldFail(func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"world"}) })
 }

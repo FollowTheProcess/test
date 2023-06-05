@@ -74,7 +74,7 @@ func False(t testing.TB, v bool) {
 // Diff fails if got != want and provides a rich diff.
 //
 // If got and want are structs, unexported fields will be included in the comparison.
-func Diff[T any](t testing.TB, got, want T) {
+func Diff(t testing.TB, got, want any) {
 	t.Helper()
 	if reflect.TypeOf(got).Kind() == reflect.Struct {
 		if diff := cmp.Diff(want, got, cmp.AllowUnexported(got, want)); diff != "" {
@@ -84,5 +84,13 @@ func Diff[T any](t testing.TB, got, want T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatalf("Mismatch (-want, +got):\n%s", diff)
 		}
+	}
+}
+
+// DeepEqual fails if reflect.DeepEqual(got, want) == false.
+func DeepEqual(t testing.TB, got, want any) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
 	}
 }

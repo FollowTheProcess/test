@@ -57,6 +57,9 @@ func TestPass(t *testing.T) {
 
 	shouldPass(func(tb testing.TB) { test.Ok(tb, nil) })
 
+	shouldPass(func(tb testing.TB) { test.True(tb, true) })
+	shouldPass(func(tb testing.TB) { test.False(tb, false) })
+
 	shouldPass(func(tb testing.TB) {
 		test.EqualFunc(tb, "something", "equal", func(got, want string) bool { return true })
 	})
@@ -115,6 +118,9 @@ func TestFail(t *testing.T) {
 	shouldFail(func(tb testing.TB) { test.NotEqual(tb, 3.14, 3.14) })
 
 	shouldFail(func(tb testing.TB) { test.Ok(tb, errors.New("uh oh")) })
+
+	shouldFail(func(tb testing.TB) { test.True(tb, false) })
+	shouldFail(func(tb testing.TB) { test.False(tb, true) })
 
 	shouldFail(func(tb testing.TB) {
 		test.EqualFunc(tb, "something", "different", func(got, want string) bool { return false })

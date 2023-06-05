@@ -3,7 +3,9 @@
 // comparison and colour output.
 package test
 
-import "testing"
+import (
+	"testing"
+)
 
 // Equal fails if got != want.
 func Equal[T comparable](t testing.TB, got, want T) {
@@ -48,5 +50,21 @@ func Ok(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatalf("\nGot:\t%v\nWanted:\tnil\n", err)
+	}
+}
+
+// True fails if v is not true.
+func True(t testing.TB, v bool) {
+	t.Helper()
+	if !v {
+		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v", v, true)
+	}
+}
+
+// False fails if v is not true.
+func False(t testing.TB, v bool) {
+	t.Helper()
+	if v {
+		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v", v, false)
 	}
 }

@@ -1,6 +1,5 @@
 // Package test provides a lightweight, but useful extension to the std lib's testing package
-// for a friendlier and more intuitive API, as well some enhanced functionality like rich
-// comparison and colour output.
+// for a friendlier and more intuitive API
 package test
 
 import (

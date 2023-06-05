@@ -17,9 +17,9 @@ func Equal[T comparable](t testing.TB, got, want T) {
 // when the items to be compared do not implement the comparable generic constraint
 //
 // The comparator should return true if got and want should be considered equal.
-func EqualFunc[T any](t testing.TB, got, want T, comparator func(got, want T) bool) {
+func EqualFunc[T any](t testing.TB, got, want T, equal func(got, want T) bool) {
 	t.Helper()
-	if !comparator(got, want) {
+	if !equal(got, want) {
 		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
 	}
 }
@@ -36,9 +36,9 @@ func NotEqual[T comparable](t testing.TB, got, want T) {
 // when the items to be compared do not implement the comparable generic constraint
 //
 // The comparator should return true if got and want should be considered equal.
-func NotEqualFunc[T any](t testing.TB, got, want T, comparator func(got, want T) bool) {
+func NotEqualFunc[T any](t testing.TB, got, want T, equal func(got, want T) bool) {
 	t.Helper()
-	if comparator(got, want) {
+	if equal(got, want) {
 		t.Fatalf("\nValues were equal:\t%+v\n", got)
 	}
 }

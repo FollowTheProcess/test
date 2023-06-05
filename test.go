@@ -3,6 +3,7 @@
 package test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -71,9 +72,17 @@ func False(t testing.TB, v bool) {
 }
 
 // Diff fails if got != want and provides a rich diff.
+//
+// If got and want are structs, unexported fields will be included in the comparison.
 func Diff[T any](t testing.TB, got, want T) {
 	t.Helper()
-	if diff := cmp.Diff(want, got, cmp.AllowUnexported(got, want)); diff != "" {
-		t.Fatalf("Mismatch (-want, +got):\n%s", diff)
+	if reflect.TypeOf(got).Kind() == reflect.Struct {
+		if diff := cmp.Diff(want, got, cmp.AllowUnexported(got, want)); diff != "" {
+			t.Fatalf("Mismatch (-want, +got):\n%s", diff)
+		}
+	} else {
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want, +got):\n%s", diff)
+		}
 	}
 }

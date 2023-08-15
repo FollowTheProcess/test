@@ -115,6 +115,7 @@ func TestFail(t *testing.T) {
 		}
 	}
 
+	// All functions that should fail their test TB
 	failFns := []func(tb testing.TB){
 		func(tb testing.TB) { test.Equal(tb, "something", "else") },
 		func(tb testing.TB) { test.Equal(tb, 42, 27) },

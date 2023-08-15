@@ -55,6 +55,14 @@ func Ok(t testing.TB, err error) {
 	}
 }
 
+// Err fails if err == nil.
+func Err(t testing.TB, err error) {
+	t.Helper()
+	if err == nil {
+		t.Fatalf("Error was not nil:\t%v\n", err)
+	}
+}
+
 // True fails if v is false.
 func True(t testing.TB, v bool) {
 	t.Helper()

@@ -86,6 +86,8 @@ func TestPass(t *testing.T) {
 			test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "dave"})
 		},
 		func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"hello"}) },
+		func(tb testing.TB) { test.ErrIsWanted(tb, errors.New("uh oh"), true) },
+		func(tb testing.TB) { test.ErrIsWanted(tb, nilErr(), false) },
 	}
 
 	for _, fn := range passFns {
@@ -155,6 +157,8 @@ func TestFail(t *testing.T) {
 			test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "john"})
 		},
 		func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"world"}) },
+		func(tb testing.TB) { test.ErrIsWanted(tb, errors.New("uh oh"), false) },
+		func(tb testing.TB) { test.ErrIsWanted(tb, nilErr(), true) },
 	}
 
 	for _, fn := range failFns {

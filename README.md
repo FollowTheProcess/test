@@ -101,6 +101,77 @@ Will give you:
           }
 ```
 
+### Table Driven Tests
+
+Table driven tests are great! But when you test errors too it can get a bit awkward, you have to do the `if (err != nil) != tt.wantErr` thing and I personally
+*always* have to do the boolean logic in my head to make sure I got that right. Enter `test.ErrIsWanted`:
+
+```go
+func TestTableThings(t *testing.T) {
+    tests := []struct {
+        name    string
+        want    int
+        wantErr bool
+    }{
+        {
+            name:    "no error",
+            want:    4,
+            wantErr: false,
+        },
+        {
+            name:    "yes error",
+            want:    4,
+            wantErr: true,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got, err := SomeFunction()
+    
+            test.ErrIsWanted(t, err, tt.wantErr)
+            test.Equal(t, got, tt.want)
+        })
+    }
+}
+```
+
+Which is basically semantically equivalent to:
+
+```go
+func TestTableThings(t *testing.T) {
+    tests := []struct {
+        name    string
+        want    int
+        wantErr bool
+    }{
+        {
+            name:    "no error",
+            want:    4,
+            wantErr: false,
+        },
+        {
+            name:    "yes error",
+            want:    4,
+            wantErr: true,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got, err := SomeFunction()
+    
+            if tt.wantErr {
+                test.Err(t, err)
+            } else {
+                test.Ok(t, err)
+            }
+            test.Equal(t, got, tt.want)
+        })
+    }
+}
+```
+
 ### Credits
 
 This package was created with [copier] and the [FollowTheProcess/go_copier] project template.

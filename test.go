@@ -63,11 +63,23 @@ func Err(t testing.TB, err error) {
 	}
 }
 
+// ErrIsWanted fails if you got an error and didn't want it, or if you
+// didn't get an error but wanted one.
+//
+// It simplifies checking for errors in table driven tests where on any
+// iteration err could either be nil or not.
+func ErrIsWanted(t testing.TB, err error, want bool) {
+	t.Helper()
+	if (err != nil) != want {
+		t.Fatalf("\nGot error:\t%v\nWanted error: %v\n", err, want)
+	}
+}
+
 // True fails if v is false.
 func True(t testing.TB, v bool) {
 	t.Helper()
 	if !v {
-		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v", v, true)
+		t.Fatalf("\nGot:\t%v\nWanted:\t%v", v, true)
 	}
 }
 
@@ -75,7 +87,7 @@ func True(t testing.TB, v bool) {
 func False(t testing.TB, v bool) {
 	t.Helper()
 	if v {
-		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v", v, false)
+		t.Fatalf("\nGot:\t%v\nWanted:\t%v", v, false)
 	}
 }
 

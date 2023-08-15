@@ -36,6 +36,7 @@ func TestSomething(t *testing.T) {
 
     err := doSomething()
     test.Ok(t, err) // Fails if err != nil
+    test.Err(t, err) // Fails if err == nil
 
     test.True(t, true) // Passes
     test.False(t, true) // Fails

@@ -1,4 +1,4 @@
-.PHONY: help tidy fmt test lint cover clean check sloc
+.PHONY: help tidy fmt test lint doc cover clean check sloc
 .DEFAULT_GOAL := help
 
 COVERAGE_DATA := coverage.out
@@ -19,6 +19,9 @@ test: ## Run the test suite
 
 lint: ## Run the linters and auto-fix if possible
 	golangci-lint run --fix
+
+doc: ## Render the docs locally
+	pkgsite -open
 
 cover: ## Calculate test coverage and render the html
 	go test -race -cover -covermode atomic -coverprofile $(COVERAGE_DATA) ./...

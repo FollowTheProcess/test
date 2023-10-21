@@ -71,7 +71,7 @@ func Err(t testing.TB, err error) {
 func ErrIsWanted(t testing.TB, err error, want bool) {
 	t.Helper()
 	if (err != nil) != want {
-		t.Fatalf("\nGot error:\t%v\nWanted error: %v\n", err, want)
+		t.Fatalf("\nGot error:\t%v\nWanted error:\t%v\n", err, want)
 	}
 }
 

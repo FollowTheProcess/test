@@ -65,7 +65,7 @@ func TestNonComparableTypes(t *testing.T) {
 
     test.EqualFunc(t, a, b, sliceEqual) // Passes
 
-    // Can also use e.g. golang.org/x/exp/slices
+    // Can also use e.g. the new slices package
     test.EqualFunc(t, a, b, slices.Equal[string]) // Also passes :)
 
     test.EqualFunc(t, a, c, slices.Equal[string]) // Fails

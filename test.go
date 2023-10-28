@@ -3,6 +3,7 @@
 package test
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -10,6 +11,9 @@ import (
 )
 
 // Equal fails if got != want.
+//
+//	test.Equal(t, "apples", "apples") // Passes
+//	test.Equal(t, "apples", "oranges") // Fails
 func Equal[T comparable](t testing.TB, got, want T) {
 	t.Helper()
 	if got != want {
@@ -29,6 +33,9 @@ func EqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 }
 
 // NotEqual fails if got == want.
+//
+//	test.NotEqual(t, "apples", "oranges") // Passes
+//	test.NotEqual(t, "apples", "apples") // Fails
 func NotEqual[T comparable](t testing.TB, got, want T) {
 	t.Helper()
 	if got == want {
@@ -47,19 +54,37 @@ func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 	}
 }
 
-// Ok fails if err != nil.
-func Ok(t testing.TB, err error) {
+// Ok fails if err != nil, optionally adding context to the output.
+//
+//	err := doSomething()
+//	test.Ok(t, err, "Doing something")
+func Ok(t testing.TB, err error, context ...string) {
 	t.Helper()
+	var msg string
+	if len(context) == 0 {
+		msg = fmt.Sprintf("\nGot error:\t%v\nWanted:\tnil\n", err)
+	} else {
+		msg = fmt.Sprintf("\nGot error:\t%v\nWanted:\tnil\nContext:\t%s\n", err, context[0])
+	}
 	if err != nil {
-		t.Fatalf("\nGot error:\t%v\nWanted:\tnil\n", err)
+		t.Fatalf(msg, err)
 	}
 }
 
 // Err fails if err == nil.
-func Err(t testing.TB, err error) {
+//
+//	err := shouldReturnErr()
+//	test.Err(t, err, "shouldReturnErr")
+func Err(t testing.TB, err error, context ...string) {
 	t.Helper()
+	var msg string
+	if len(context) == 0 {
+		msg = fmt.Sprintf("Error was not nil:\t%v\n", err)
+	} else {
+		msg = fmt.Sprintf("Error was not nil:\t%v\nContext:\t%s", err, context[0])
+	}
 	if err == nil {
-		t.Fatalf("Error was not nil:\t%v\n", err)
+		t.Fatalf(msg, err)
 	}
 }
 
@@ -67,7 +92,12 @@ func Err(t testing.TB, err error) {
 // didn't get an error but wanted one.
 //
 // It simplifies checking for errors in table driven tests where on any
-// iteration err could either be nil or not.
+// iteration err may or may not be nil.
+//
+//	test.ErrIsWanted(t, errors.New("uh oh"), true) // Passes, got error when we wanted one
+//	test.ErrIsWanted(t, errors.New("uh oh"), false) // Fails, got error but didn't want one
+//	test.ErrIsWanted(t, nil, true) // Fails, wanted an error but didn't get one
+//	test.ErrIsWanted(t, nil, false) // Passes, didn't want an error and didn't get one
 func ErrIsWanted(t testing.TB, err error, want bool) {
 	t.Helper()
 	if (err != nil) != want {
@@ -76,6 +106,9 @@ func ErrIsWanted(t testing.TB, err error, want bool) {
 }
 
 // True fails if v is false.
+//
+//	test.True(t, true) // Passes
+//	test.True(t, false) // Fails
 func True(t testing.TB, v bool) {
 	t.Helper()
 	if !v {
@@ -84,6 +117,9 @@ func True(t testing.TB, v bool) {
 }
 
 // False fails if v is true.
+//
+//	test.False(t, false) // Passes
+//	test.False(t, true) // Fails
 func False(t testing.TB, v bool) {
 	t.Helper()
 	if v {

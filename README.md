@@ -38,6 +38,9 @@ func TestSomething(t *testing.T) {
     test.Ok(t, err) // Fails if err != nil
     test.Err(t, err) // Fails if err == nil
 
+    // Can even add context
+    test.Ok(t, err, "doSomething went wrong")
+
     test.True(t, true) // Passes
     test.False(t, true) // Fails
 
@@ -104,7 +107,7 @@ Will give you:
 ### Table Driven Tests
 
 Table driven tests are great! But when you test errors too it can get a bit awkward, you have to do the `if (err != nil) != tt.wantErr` thing and I personally
-*always* have to do the boolean logic in my head to make sure I got that right. Enter `test.ErrIsWanted`:
+*always* have to do the boolean logic in my head to make sure I got that right. Enter `test.WantErr`:
 
 ```go
 func TestTableThings(t *testing.T) {
@@ -129,7 +132,7 @@ func TestTableThings(t *testing.T) {
         t.Run(tt.name, func(t *testing.T) {
             got, err := SomeFunction()
     
-            test.ErrIsWanted(t, err, tt.wantErr)
+            test.WantErr(t, err, tt.wantErr)
             test.Equal(t, got, tt.want)
         })
     }

@@ -88,17 +88,17 @@ func Err(t testing.TB, err error, context ...string) {
 	}
 }
 
-// ErrIsWanted fails if you got an error and didn't want it, or if you
+// WantErr fails if you got an error and didn't want it, or if you
 // didn't get an error but wanted one.
 //
 // It simplifies checking for errors in table driven tests where on any
 // iteration err may or may not be nil.
 //
-//	test.ErrIsWanted(t, errors.New("uh oh"), true) // Passes, got error when we wanted one
-//	test.ErrIsWanted(t, errors.New("uh oh"), false) // Fails, got error but didn't want one
-//	test.ErrIsWanted(t, nil, true) // Fails, wanted an error but didn't get one
-//	test.ErrIsWanted(t, nil, false) // Passes, didn't want an error and didn't get one
-func ErrIsWanted(t testing.TB, err error, want bool) {
+//	test.WantErr(t, errors.New("uh oh"), true) // Passes, got error when we wanted one
+//	test.WantErr(t, errors.New("uh oh"), false) // Fails, got error but didn't want one
+//	test.WantErr(t, nil, true) // Fails, wanted an error but didn't get one
+//	test.WantErr(t, nil, false) // Passes, didn't want an error and didn't get one
+func WantErr(t testing.TB, err error, want bool) {
 	t.Helper()
 	if (err != nil) != want {
 		t.Fatalf("\nGot error:\t%v\nWanted error:\t%v\n", err, want)

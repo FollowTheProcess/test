@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/FollowTheProcess/test"
@@ -167,6 +169,21 @@ func TestFail(t *testing.T) {
 
 	for _, fn := range failFns {
 		shouldFail(fn)
+	}
+}
+
+func TestData(t *testing.T) {
+	got := test.Data(t)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Test for Data could not get cwd: %v", err)
+	}
+
+	want := filepath.Join(cwd, "testdata")
+
+	if got != want {
+		t.Errorf("\nGot:\t%s\nWanted:\t%s\n", got, want)
 	}
 }
 

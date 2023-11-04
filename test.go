@@ -4,6 +4,8 @@ package test
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -149,4 +151,24 @@ func DeepEqual(t testing.TB, got, want any) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
 	}
+}
+
+// Data returns the filepath to the testdata directory for the current package.
+//
+// When running tests, Go will change the cwd to the directory of the package under test. This means
+// that reference data stored in $CWD/testdata can be easily retrieved in the same way for any package.
+//
+// The $CWD/testdata directory is a Go idiom, common practice, and is completely ignored by the go tool.
+//
+// Data makes no guarantee that $CWD/testdata exists, it simply returns it's path.
+//
+//	file := filepath.Join(test.Data(t), "test.txt")
+func Data(t testing.TB) string {
+	t.Helper()
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get $CWD: %v", err)
+	}
+
+	return filepath.Join(cwd, "testdata")
 }

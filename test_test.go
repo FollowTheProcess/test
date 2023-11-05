@@ -92,6 +92,7 @@ func TestPass(t *testing.T) {
 		func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"hello"}) },
 		func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), true) },
 		func(tb testing.TB) { test.WantErr(tb, nilErr(), false) },
+		func(tb testing.TB) { test.File(tb, "file.txt", "hello\n") },
 	}
 
 	for _, fn := range passFns {
@@ -165,6 +166,7 @@ func TestFail(t *testing.T) {
 		func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"world"}) },
 		func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), false) },
 		func(tb testing.TB) { test.WantErr(tb, nilErr(), true) },
+		func(tb testing.TB) { test.File(tb, "file.txt", "wrong\n") },
 	}
 
 	for _, fn := range failFns {

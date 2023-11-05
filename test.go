@@ -3,6 +3,7 @@
 package test
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -179,6 +180,9 @@ func Data(t testing.TB) string {
 //
 // If the contents differ, the test will fail with output equivalent to [test.Diff]
 //
+// Files with differing line endings (e.g windows CR LF\r\n vs unix LF \n) will be normalised to
+// \n prior to comparison so this function will behave identically across multiple platforms.
+//
 //	test.File(t, "expected.txt", "hello\n")
 func File(t testing.TB, file, want string) {
 	t.Helper()
@@ -187,6 +191,8 @@ func File(t testing.TB, file, want string) {
 	if err != nil {
 		t.Fatalf("could not read %s: %v", file, err)
 	}
+
+	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 
 	Diff(t, string(contents), want)
 }

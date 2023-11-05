@@ -172,3 +172,21 @@ func Data(t testing.TB) string {
 
 	return filepath.Join(cwd, "testdata")
 }
+
+// File fails if the contents of the given file do not match want.
+//
+// It takes the name of a file (relative to $CWD/testdata) and the contents to compare.
+//
+// If the contents differ, the test will fail with output equivalent to [test.Diff]
+//
+//	test.File(t, "expected.txt", "hello\n")
+func File(t testing.TB, file, want string) {
+	t.Helper()
+	file = filepath.Join(Data(t), file)
+	contents, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("could not read %s: %v", file, err)
+	}
+
+	Diff(t, string(contents), want)
+}

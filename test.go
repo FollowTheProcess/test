@@ -180,7 +180,7 @@ func Data(t testing.TB) string {
 //
 // If the contents differ, the test will fail with output equivalent to test.Diff.
 //
-// Files with differing line endings (e.g windows CR LF\r\n vs unix LF \n) will be normalised to
+// Files with differing line endings (e.g windows CR LF \r\n vs unix LF \n) will be normalised to
 // \n prior to comparison so this function will behave identically across multiple platforms.
 //
 //	test.File(t, "expected.txt", "hello\n")

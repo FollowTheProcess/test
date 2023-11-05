@@ -178,7 +178,7 @@ func Data(t testing.TB) string {
 //
 // It takes the name of a file (relative to $CWD/testdata) and the contents to compare.
 //
-// If the contents differ, the test will fail with output equivalent to [test.Diff]
+// If the contents differ, the test will fail with output equivalent to test.Diff.
 //
 // Files with differing line endings (e.g windows CR LF\r\n vs unix LF \n) will be normalised to
 // \n prior to comparison so this function will behave identically across multiple platforms.

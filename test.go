@@ -5,6 +5,7 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,6 +13,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 )
+
+// floatEqualityThreshold allows us to do near-equality checks for floats.
+const floatEqualityThreshold = 1e-8
 
 // Equal fails if got != want.
 //
@@ -21,6 +25,19 @@ func Equal[T comparable](t testing.TB, got, want T) {
 	t.Helper()
 	if got != want {
 		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
+	}
+}
+
+// NearlyEqual is like Equal but for floating point numbers where typically equality often fails.
+//
+// If the difference between got and want is sufficiently small, they are considered equal.
+//
+//	test.NearlyEqual(t, 3.0000000001, 3.0) // Passes, close enough to be considered equal
+//	test.NearlyEqual(t, 3.0000001, 3.0) // Fails, too different
+func NearlyEqual[T ~float32 | ~float64](t testing.TB, got, want T) {
+	t.Helper()
+	if math.Abs(float64(got-want)) >= floatEqualityThreshold {
+		t.Fatalf("\nGot:\t%v\nWanted:\t%v\n", got, want)
 	}
 }
 

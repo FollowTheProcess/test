@@ -34,6 +34,8 @@ func TestSomething(t *testing.T) {
     test.NotEqual(t, 42, 27) // Passes, these are not equal
     test.NotEqual(t, 42, 42) // Fails
 
+    test.NearlyEqual(t, 3.0000000001, 3.0) // Look, floats handled easily!
+
     err := doSomething()
     test.Ok(t, err) // Fails if err != nil
     test.Err(t, err) // Fails if err == nil
@@ -91,7 +93,7 @@ Large structs or long slices can often be difficult to compare using `reflect.De
 
 ```go
 func TestDiff(t *testing.T) {
-    // Pretent these are very long, or are large structs
+    // Pretend these are very long, or are large structs
     a := []string{"hello", "world"}
     b := []string{"hello", "there"}
 

@@ -26,154 +26,153 @@ func (t *TB) Fatalf(format string, args ...any) {
 }
 
 func TestPass(t *testing.T) {
-	shouldPass := func(fn func(tb testing.TB)) {
+	shouldPass := func(name string, fn func(tb testing.TB)) {
 		t.Helper()
 		buf := &bytes.Buffer{}
 		tb := &TB{out: buf}
 
 		if tb.failed {
-			t.Fatal("Initial failed state should be false")
+			t.Fatalf("%s initial failed state should be false", name)
 		}
 
 		// Call our test function
 		fn(tb)
 
 		if tb.failed {
-			t.Fatal("Should have passed")
+			t.Fatalf("%s should have passed", name)
 		}
 
 		if buf.String() != "" {
-			t.Fatalf("Shouldn't have written anything on success\nGot:\t%+v\n", buf.String())
+			t.Fatalf("%s houldn't have written anything on success\nGot:\t%+v\n", name, buf.String())
 		}
 	}
 
 	// All functions that should not fail their test TB
-	passFns := []func(tb testing.TB){
-		func(tb testing.TB) { test.Equal(tb, "hello", "hello") },
-		func(tb testing.TB) { test.Equal(tb, "hello", "hello") },
-		func(tb testing.TB) { test.Equal(tb, 42, 42) },
-		func(tb testing.TB) { test.Equal(tb, true, true) },
-		func(tb testing.TB) { test.Equal(tb, 3.14, 3.14) },
-		func(tb testing.TB) { test.NearlyEqual(tb, 3.0000000001, 3.0) },
-		func(tb testing.TB) { test.NotEqual(tb, "hello", "there") },
-		func(tb testing.TB) { test.NotEqual(tb, 42, 27) },
-		func(tb testing.TB) { test.NotEqual(tb, true, false) },
-		func(tb testing.TB) { test.NotEqual(tb, 3.14, 8.67) },
-		func(tb testing.TB) { test.Ok(tb, nil) },
-		func(tb testing.TB) { test.Ok(tb, nil, "Something") },
-		func(tb testing.TB) { test.Err(tb, errors.New("uh oh")) },
-		func(tb testing.TB) { test.Err(tb, errors.New("uh oh"), "Something") },
-		func(tb testing.TB) { test.True(tb, true) },
-		func(tb testing.TB) { test.False(tb, false) },
-		func(tb testing.TB) { test.Diff(tb, 42, 42) },
-		func(tb testing.TB) { test.Diff(tb, true, true) },
-		func(tb testing.TB) { test.Diff(tb, "hello", "hello") },
-		func(tb testing.TB) { test.Diff(tb, 3.14, 3.14) },
-		func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"hello"}) },
-		func(tb testing.TB) {
+	passFns := map[string]func(tb testing.TB){
+		"Equal string":      func(tb testing.TB) { test.Equal(tb, "hello", "hello") },
+		"Equal int":         func(tb testing.TB) { test.Equal(tb, 42, 42) },
+		"Equal bool":        func(tb testing.TB) { test.Equal(tb, true, true) },
+		"Equal float":       func(tb testing.TB) { test.Equal(tb, 3.14, 3.14) },
+		"NearlyEqual":       func(tb testing.TB) { test.NearlyEqual(tb, 3.0000000001, 3.0) },
+		"NotEqual string":   func(tb testing.TB) { test.NotEqual(tb, "hello", "there") },
+		"NotEqual int":      func(tb testing.TB) { test.NotEqual(tb, 42, 27) },
+		"NotEqual bool":     func(tb testing.TB) { test.NotEqual(tb, true, false) },
+		"NotEqual float":    func(tb testing.TB) { test.NotEqual(tb, 3.14, 8.67) },
+		"Ok nil":            func(tb testing.TB) { test.Ok(tb, nil) },
+		"Ok with context":   func(tb testing.TB) { test.Ok(tb, nil, "Something") },
+		"Err":               func(tb testing.TB) { test.Err(tb, errors.New("uh oh")) },
+		"Err with context":  func(tb testing.TB) { test.Err(tb, errors.New("uh oh"), "Something") },
+		"True":              func(tb testing.TB) { test.True(tb, true) },
+		"False":             func(tb testing.TB) { test.False(tb, false) },
+		"Diff int":          func(tb testing.TB) { test.Diff(tb, 42, 42) },
+		"Diff bool":         func(tb testing.TB) { test.Diff(tb, true, true) },
+		"Diff string":       func(tb testing.TB) { test.Diff(tb, "hello", "hello") },
+		"Diff float":        func(tb testing.TB) { test.Diff(tb, 3.14, 3.14) },
+		"Diff string slice": func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"hello"}) },
+		"EqualFunc string": func(tb testing.TB) {
 			test.EqualFunc(tb, "something", "equal", func(got, want string) bool { return true })
 		},
-		func(tb testing.TB) { test.EqualFunc(tb, 42, 42, func(got, want int) bool { return true }) },
-		func(tb testing.TB) {
+		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 42, func(got, want int) bool { return true }) },
+		"EqualFunc string slice": func(tb testing.TB) {
 			test.EqualFunc(tb, []string{"hello"}, []string{"hello"}, func(got, want []string) bool { return true })
 		},
-		func(tb testing.TB) {
+		"NotEqualFunc string": func(tb testing.TB) {
 			test.NotEqualFunc(tb, "something", "different", func(got, want string) bool { return false })
 		},
-		func(tb testing.TB) { test.NotEqualFunc(tb, 42, 12, func(got, want int) bool { return false }) },
-		func(tb testing.TB) {
+		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 12, func(got, want int) bool { return false }) },
+		"NotEqualFunc string slice": func(tb testing.TB) {
 			test.NotEqualFunc(tb, []string{"hello"}, []string{"something", "else"}, func(got, want []string) bool { return false })
 		},
-		func(tb testing.TB) {
+		"Diff unexported struct": func(tb testing.TB) {
 			test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "dave"})
 		},
-		func(tb testing.TB) {
+		"Diff exported struct": func(tb testing.TB) {
 			test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "dave"})
 		},
-		func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"hello"}) },
-		func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), true) },
-		func(tb testing.TB) { test.WantErr(tb, nilErr(), false) },
-		func(tb testing.TB) { test.File(tb, "file.txt", "hello\n") },
+		"DeepEqual string slice": func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"hello"}) },
+		"WantErr true":           func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), true) },
+		"WantErr false":          func(tb testing.TB) { test.WantErr(tb, nilErr(), false) },
+		"File":                   func(tb testing.TB) { test.File(tb, "file.txt", "hello\n") },
 	}
 
-	for _, fn := range passFns {
-		shouldPass(fn)
+	for name, fn := range passFns {
+		shouldPass(name, fn)
 	}
 }
 
 func TestFail(t *testing.T) {
-	shouldFail := func(fn func(tb testing.TB)) {
+	shouldFail := func(name string, fn func(tb testing.TB)) {
 		t.Helper()
 		buf := &bytes.Buffer{}
 		tb := &TB{out: buf}
 
 		if tb.failed {
-			t.Fatal("Initial failed state should be false")
+			t.Fatalf("%s initial failed state should be false", name)
 		}
 
 		// Call our test function
 		fn(tb)
 
 		if !tb.failed {
-			t.Fatal("Should have failed")
+			t.Fatalf("%s should have failed", name)
 		}
 
 		if buf.String() == "" {
-			t.Fatal("Should have written on failure")
+			t.Fatalf("%s should have written on failure", name)
 		}
 	}
 
 	// All functions that should fail their test TB
-	failFns := []func(tb testing.TB){
-		func(tb testing.TB) { test.Equal(tb, "something", "else") },
-		func(tb testing.TB) { test.Equal(tb, 42, 27) },
-		func(tb testing.TB) { test.Equal(tb, true, false) },
-		func(tb testing.TB) { test.Equal(tb, 3.14, 8.96) },
-		func(tb testing.TB) { test.NearlyEqual(tb, 3.0000001, 3.0) },
-		func(tb testing.TB) { test.NotEqual(tb, "something", "something") },
-		func(tb testing.TB) { test.NotEqual(tb, 42, 42) },
-		func(tb testing.TB) { test.NotEqual(tb, true, true) },
-		func(tb testing.TB) { test.NotEqual(tb, 3.14, 3.14) },
-		func(tb testing.TB) { test.Ok(tb, errors.New("uh oh")) },
-		func(tb testing.TB) { test.Ok(tb, errors.New("uh oh"), "Something") },
-		func(tb testing.TB) { test.Err(tb, nilErr()) },
-		func(tb testing.TB) { test.Err(tb, nilErr(), "Something") },
-		func(tb testing.TB) { test.True(tb, false) },
-		func(tb testing.TB) { test.False(tb, true) },
-		func(tb testing.TB) { test.Diff(tb, "hello", "there") },
-		func(tb testing.TB) { test.Diff(tb, 42, 27) },
-		func(tb testing.TB) { test.Diff(tb, true, false) },
-		func(tb testing.TB) { test.Diff(tb, 3.14, 8.69) },
-		func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"there"}) },
-		func(tb testing.TB) {
+	failFns := map[string]func(tb testing.TB){
+		"Equal string":      func(tb testing.TB) { test.Equal(tb, "something", "else") },
+		"Equal int":         func(tb testing.TB) { test.Equal(tb, 42, 27) },
+		"Equal bool":        func(tb testing.TB) { test.Equal(tb, true, false) },
+		"Equal float":       func(tb testing.TB) { test.Equal(tb, 3.14, 8.96) },
+		"NearlyEqual":       func(tb testing.TB) { test.NearlyEqual(tb, 3.0000001, 3.0) },
+		"NotEqual string":   func(tb testing.TB) { test.NotEqual(tb, "something", "something") },
+		"NotEqual int":      func(tb testing.TB) { test.NotEqual(tb, 42, 42) },
+		"NotEqual bool":     func(tb testing.TB) { test.NotEqual(tb, true, true) },
+		"NotEqual float":    func(tb testing.TB) { test.NotEqual(tb, 3.14, 3.14) },
+		"Ok":                func(tb testing.TB) { test.Ok(tb, errors.New("uh oh")) },
+		"Ok with context":   func(tb testing.TB) { test.Ok(tb, errors.New("uh oh"), "Something") },
+		"Err":               func(tb testing.TB) { test.Err(tb, nilErr()) },
+		"Err with context":  func(tb testing.TB) { test.Err(tb, nilErr(), "Something") },
+		"True":              func(tb testing.TB) { test.True(tb, false) },
+		"False":             func(tb testing.TB) { test.False(tb, true) },
+		"Diff string":       func(tb testing.TB) { test.Diff(tb, "hello", "there") },
+		"Diff int":          func(tb testing.TB) { test.Diff(tb, 42, 27) },
+		"Diff bool":         func(tb testing.TB) { test.Diff(tb, true, false) },
+		"Diff float":        func(tb testing.TB) { test.Diff(tb, 3.14, 8.69) },
+		"Diff string slice": func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"there"}) },
+		"EqualFunc string": func(tb testing.TB) {
 			test.EqualFunc(tb, "something", "different", func(got, want string) bool { return false })
 		},
-		func(tb testing.TB) { test.EqualFunc(tb, 42, 127, func(got, want int) bool { return false }) },
-		func(tb testing.TB) {
+		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 127, func(got, want int) bool { return false }) },
+		"EqualFunc string slice": func(tb testing.TB) {
 			test.EqualFunc(tb, []int{42}, []int{27}, func(got, want []int) bool { return false })
 		},
-		func(tb testing.TB) {
+		"NotEqualFunc string": func(tb testing.TB) {
 			test.NotEqualFunc(tb, "something", "something", func(got, want string) bool { return true })
 		},
-		func(tb testing.TB) { test.NotEqualFunc(tb, 42, 42, func(got, want int) bool { return true }) },
-		func(tb testing.TB) {
+		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 42, func(got, want int) bool { return true }) },
+		"NotEqualFunc int slice": func(tb testing.TB) {
 			test.NotEqualFunc(tb, []int{42}, []int{42}, func(got, want []int) bool { return true })
 		},
-		func(tb testing.TB) {
+		"Diff unexported struct": func(tb testing.TB) {
 			test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "john"})
 		},
-		func(tb testing.TB) {
+		"Diff exported struct": func(tb testing.TB) {
 			test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "john"})
 		},
-		func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"world"}) },
-		func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), false) },
-		func(tb testing.TB) { test.WantErr(tb, nilErr(), true) },
-		func(tb testing.TB) { test.File(tb, "file.txt", "wrong\n") },
-		func(tb testing.TB) { test.File(tb, "missing.txt", "wrong\n") },
+		"DeepEqual string slice": func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"world"}) },
+		"WantErr true":           func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), false) },
+		"WantErr false":          func(tb testing.TB) { test.WantErr(tb, nilErr(), true) },
+		"File wrong":             func(tb testing.TB) { test.File(tb, "file.txt", "wrong\n") },
+		"File missing":           func(tb testing.TB) { test.File(tb, "missing.txt", "wrong\n") },
 	}
 
-	for _, fn := range failFns {
-		shouldFail(fn)
+	for name, fn := range failFns {
+		shouldFail(name, fn)
 	}
 }
 

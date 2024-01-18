@@ -219,6 +219,10 @@ func File(t testing.TB, file, want string) {
 // CaptureOutput captures and returns data printed to stdout and stderr by the provided function fn, allowing
 // you to test functions that write to those streams and do not have an option to pass in an [io.Writer].
 //
+// If the provided function returns a non nil error, the test is failed with the error logged as the reason.
+//
+// If any error occurs capturing stdout or stderr, the test will also be failed with a descriptive log.
+//
 //	fn := func() error {
 //		fmt.Println("hello stdout")
 //		return nil

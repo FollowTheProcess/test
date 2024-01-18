@@ -216,7 +216,17 @@ func File(t testing.TB, file, want string) {
 	Diff(t, string(contents), want)
 }
 
-// CaptureOutput captures and returns data printed to stdout and stderr by the provided function fn.
+// CaptureOutput captures and returns data printed to stdout and stderr by the provided function fn, allowing
+// you to test functions that write to those streams and do not have an option to pass in an [io.Writer].
+//
+//	fn := func() error {
+//		fmt.Println("hello stdout")
+//		return nil
+//	}
+//
+//	stdout, stderr := test.CaptureOutput(t, fn)
+//	fmt.Print(stdout) // "hello stdout\n"
+//	fmt.Print(stderr) // ""
 func CaptureOutput(t testing.TB, fn func() error) (stdout, stderr string) {
 	t.Helper()
 

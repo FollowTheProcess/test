@@ -184,6 +184,33 @@ func TestTableThings(t *testing.T) {
 }
 ```
 
+### Capturing Stdout and Stderr
+
+We've all been there, trying to test a function that prints but doesn't accept an `io.Writer` as a destination 🙄.
+
+That's where `test.CaptureOutput` comes in!
+
+```go
+func TestOutput(t *testing.T) {
+    // Function that prints to stdout and stderr, but imagine this is defined somewhere else
+    // maybe a 3rd party library that you don't control, it just prints and you can't tell it where
+    fn := func() error {
+        fmt.Fprintln(os.Stdout, "hello stdout")
+        fmt.Fprintln(os.Stderr, "hello stderr")
+
+        return nil
+    }
+
+    // CaptureOutput to the rescue!
+    stdout, stderr := test.CaptureOutput(t, fn)
+
+    test.Equal(t, stdout, "hello stdout\n")
+    test.Equal(t, stderr, "hello stderr\n")
+}
+```
+
+Under the hood `CaptureOutput` temporarily captures both streams, copies the data to a buffer and returns the output back to you, before cleaning everything back up again.
+
 ### Credits
 
 This package was created with [copier] and the [FollowTheProcess/go_copier] project template.

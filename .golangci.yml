@@ -23,7 +23,6 @@ linters:
     - nilerr
     - nilnil
     - nolintlint
-    - nonamedreturns
     - predeclared
     - reassign
     - revive

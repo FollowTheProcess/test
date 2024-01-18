@@ -191,6 +191,42 @@ func TestData(t *testing.T) {
 	}
 }
 
+func TestCapture(t *testing.T) {
+	t.Run("happy", func(t *testing.T) {
+		// Some fake user function that writes to stdout and stderr
+		fn := func() error {
+			fmt.Fprintln(os.Stdout, "hello stdout")
+			fmt.Fprintln(os.Stderr, "hello stderr")
+
+			return nil
+		}
+
+		stdout, stderr := test.CaptureOutput(t, fn)
+
+		test.Equal(t, stdout, "hello stdout\n")
+		test.Equal(t, stderr, "hello stderr\n")
+	})
+
+	t.Run("sad", func(t *testing.T) {
+		// This time the user function returns an error
+		fn := func() error {
+			return errors.New("it broke")
+		}
+
+		buf := &bytes.Buffer{}
+		testTB := &TB{out: buf}
+
+		stdout, stderr := test.CaptureOutput(testTB, fn)
+
+		// Test should have failed
+		test.True(t, testTB.failed)
+
+		// stdout and stderr should be empty
+		test.Equal(t, stdout, "")
+		test.Equal(t, stderr, "")
+	})
+}
+
 // Always returns a nil error, needed because manually constructing
 // nil means it's not an error type but here it is.
 func nilErr() error {

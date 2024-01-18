@@ -5,10 +5,12 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -212,4 +214,80 @@ func File(t testing.TB, file, want string) {
 	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 
 	Diff(t, string(contents), want)
+}
+
+// CaptureOutput captures and returns data printed to stdout and stderr by the provided function fn.
+func CaptureOutput(t testing.TB, fn func() error) (stdout, stderr string) {
+	t.Helper()
+
+	// Take copies of the original streams
+	oldStdout := os.Stdout
+	oldStderr := os.Stderr
+
+	defer func() {
+		// Restore everything back to normal
+		os.Stdout = oldStdout
+		os.Stderr = oldStderr
+	}()
+
+	stdoutReader, stdoutWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
+	}
+
+	stderrReader, stderrWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
+	}
+
+	// Set stdout and stderr streams to the pipe writers
+	os.Stdout = stdoutWriter
+	os.Stderr = stderrWriter
+
+	stdoutCapture := make(chan string)
+	stderrCapture := make(chan string)
+
+	var wg sync.WaitGroup
+	wg.Add(2) //nolint: gomnd
+
+	// Copy in goroutines to avoid blocking
+	go func(wg *sync.WaitGroup) {
+		defer func() {
+			close(stdoutCapture)
+			wg.Done()
+		}()
+		buf := &bytes.Buffer{}
+		if _, err := io.Copy(buf, stdoutReader); err != nil {
+			t.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
+		}
+		stdoutCapture <- buf.String()
+	}(&wg)
+
+	go func(wg *sync.WaitGroup) {
+		defer func() {
+			close(stderrCapture)
+			wg.Done()
+		}()
+		buf := &bytes.Buffer{}
+		if _, err := io.Copy(buf, stderrReader); err != nil {
+			t.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
+		}
+		stderrCapture <- buf.String()
+	}(&wg)
+
+	// Call the test function that produces the output
+	if err := fn(); err != nil {
+		t.Fatalf("CaptureOutput: user function returned an error: %v", err)
+	}
+
+	// Close the writers
+	stdoutWriter.Close()
+	stderrWriter.Close()
+
+	capturedStdout := <-stdoutCapture
+	capturedStderr := <-stderrCapture
+
+	wg.Wait()
+
+	return capturedStdout, capturedStderr
 }

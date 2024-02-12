@@ -70,18 +70,18 @@ func TestPass(t *testing.T) {
 		"Diff float":        func(tb testing.TB) { test.Diff(tb, 3.14, 3.14) },
 		"Diff string slice": func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"hello"}) },
 		"EqualFunc string": func(tb testing.TB) {
-			test.EqualFunc(tb, "something", "equal", func(got, want string) bool { return true })
+			test.EqualFunc(tb, "something", "equal", func(_, _ string) bool { return true })
 		},
-		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 42, func(got, want int) bool { return true }) },
+		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 42, func(_, _ int) bool { return true }) },
 		"EqualFunc string slice": func(tb testing.TB) {
-			test.EqualFunc(tb, []string{"hello"}, []string{"hello"}, func(got, want []string) bool { return true })
+			test.EqualFunc(tb, []string{"hello"}, []string{"hello"}, func(_, _ []string) bool { return true })
 		},
 		"NotEqualFunc string": func(tb testing.TB) {
-			test.NotEqualFunc(tb, "something", "different", func(got, want string) bool { return false })
+			test.NotEqualFunc(tb, "something", "different", func(_, _ string) bool { return false })
 		},
-		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 12, func(got, want int) bool { return false }) },
+		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 12, func(_, _ int) bool { return false }) },
 		"NotEqualFunc string slice": func(tb testing.TB) {
-			test.NotEqualFunc(tb, []string{"hello"}, []string{"something", "else"}, func(got, want []string) bool { return false })
+			test.NotEqualFunc(tb, []string{"hello"}, []string{"something", "else"}, func(_, _ []string) bool { return false })
 		},
 		"Diff unexported struct": func(tb testing.TB) {
 			test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "dave"})
@@ -145,18 +145,18 @@ func TestFail(t *testing.T) {
 		"Diff float":        func(tb testing.TB) { test.Diff(tb, 3.14, 8.69) },
 		"Diff string slice": func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"there"}) },
 		"EqualFunc string": func(tb testing.TB) {
-			test.EqualFunc(tb, "something", "different", func(got, want string) bool { return false })
+			test.EqualFunc(tb, "something", "different", func(_, _ string) bool { return false })
 		},
-		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 127, func(got, want int) bool { return false }) },
+		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 127, func(_, _ int) bool { return false }) },
 		"EqualFunc string slice": func(tb testing.TB) {
-			test.EqualFunc(tb, []int{42}, []int{27}, func(got, want []int) bool { return false })
+			test.EqualFunc(tb, []int{42}, []int{27}, func(_, _ []int) bool { return false })
 		},
 		"NotEqualFunc string": func(tb testing.TB) {
-			test.NotEqualFunc(tb, "something", "something", func(got, want string) bool { return true })
+			test.NotEqualFunc(tb, "something", "something", func(_, _ string) bool { return true })
 		},
-		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 42, func(got, want int) bool { return true }) },
+		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 42, func(_, _ int) bool { return true }) },
 		"NotEqualFunc int slice": func(tb testing.TB) {
-			test.NotEqualFunc(tb, []int{42}, []int{42}, func(got, want []int) bool { return true })
+			test.NotEqualFunc(tb, []int{42}, []int{42}, func(_, _ []int) bool { return true })
 		},
 		"Diff unexported struct": func(tb testing.TB) {
 			test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "john"})

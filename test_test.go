@@ -43,7 +43,11 @@ func TestPass(t *testing.T) {
 		}
 
 		if buf.String() != "" {
-			t.Fatalf("%s houldn't have written anything on success\nGot:\t%+v\n", name, buf.String())
+			t.Fatalf(
+				"%s houldn't have written anything on success\nGot:\t%+v\n",
+				name,
+				buf.String(),
+			)
 		}
 	}
 
@@ -74,14 +78,24 @@ func TestPass(t *testing.T) {
 		},
 		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 42, func(_, _ int) bool { return true }) },
 		"EqualFunc string slice": func(tb testing.TB) {
-			test.EqualFunc(tb, []string{"hello"}, []string{"hello"}, func(_, _ []string) bool { return true })
+			test.EqualFunc(
+				tb,
+				[]string{"hello"},
+				[]string{"hello"},
+				func(_, _ []string) bool { return true },
+			)
 		},
 		"NotEqualFunc string": func(tb testing.TB) {
 			test.NotEqualFunc(tb, "something", "different", func(_, _ string) bool { return false })
 		},
 		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 12, func(_, _ int) bool { return false }) },
 		"NotEqualFunc string slice": func(tb testing.TB) {
-			test.NotEqualFunc(tb, []string{"hello"}, []string{"something", "else"}, func(_, _ []string) bool { return false })
+			test.NotEqualFunc(
+				tb,
+				[]string{"hello"},
+				[]string{"something", "else"},
+				func(_, _ []string) bool { return false },
+			)
 		},
 		"Diff unexported struct": func(tb testing.TB) {
 			test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "dave"})

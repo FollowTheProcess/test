@@ -35,6 +35,8 @@ tasks:
   lint:
     desc: Run the linters and auto-fix if possible
     cmd: golangci-lint run --fix
+    deps:
+      - fmt
     preconditions:
       - sh: command -v golangci-lint
         msg: golangci-lint not installed, see https://golangci-lint.run/usage/install/#local-installation

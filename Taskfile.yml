@@ -17,7 +17,12 @@ tasks:
 
   fmt:
     desc: Run go fmt on all source files
-    cmd: go fmt ./...
+    preconditions:
+      - sh: command -v golines
+        msg: golines not installed, see https://github.com/segmentio/golines
+    cmds:
+      - go fmt ./...
+      - golines . --chain-split-dots --ignore-generated --write-output
 
   test:
     desc: Run the test suite
@@ -30,6 +35,8 @@ tasks:
   lint:
     desc: Run the linters and auto-fix if possible
     cmd: golangci-lint run --fix
+    deps:
+      - fmt
     preconditions:
       - sh: command -v golangci-lint
         msg: golangci-lint not installed, see https://golangci-lint.run/usage/install/#local-installation

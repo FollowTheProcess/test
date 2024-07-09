@@ -197,7 +197,7 @@ func Data(t testing.TB) string {
 //
 // It takes the name of a file (relative to $CWD/testdata) and the contents to compare.
 //
-// If the contents differ, the test will fail with output equivalent to test.Diff.
+// If the contents differ, the test will fail with output equivalent to [Diff].
 //
 // Files with differing line endings (e.g windows CR LF \r\n vs unix LF \n) will be normalised to
 // \n prior to comparison so this function will behave identically across multiple platforms.
@@ -262,7 +262,7 @@ func CaptureOutput(t testing.TB, fn func() error) (stdout, stderr string) {
 	stderrCapture := make(chan string)
 
 	var wg sync.WaitGroup
-	wg.Add(2) //nolint: gomnd
+	wg.Add(2) //nolint: mnd
 
 	// Copy in goroutines to avoid blocking
 	go func(wg *sync.WaitGroup) {

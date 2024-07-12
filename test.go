@@ -193,17 +193,17 @@ func Data(t testing.TB) string {
 	return filepath.Join(cwd, "testdata")
 }
 
-// File fails if the contents of the given file do not match want.
+// File fails if got does not match the contents of the given file.
 //
-// It takes the name of a file (relative to $CWD/testdata) and the contents to compare.
+// It takes a string and the name of a file (relative to $CWD/testdata) to compare.
 //
 // If the contents differ, the test will fail with output equivalent to [Diff].
 //
 // Files with differing line endings (e.g windows CR LF \r\n vs unix LF \n) will be normalised to
 // \n prior to comparison so this function will behave identically across multiple platforms.
 //
-//	test.File(t, "expected.txt", "hello\n")
-func File(t testing.TB, file, want string) {
+//	test.File(t, "hello\n", "expected.txt")
+func File(t testing.TB, got, file string) {
 	t.Helper()
 	file = filepath.Join(Data(t), file)
 	contents, err := os.ReadFile(file)
@@ -213,7 +213,7 @@ func File(t testing.TB, file, want string) {
 
 	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 
-	Diff(t, string(contents), want)
+	Diff(t, got, string(contents))
 }
 
 // CaptureOutput captures and returns data printed to stdout and stderr by the provided function fn, allowing

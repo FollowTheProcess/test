@@ -51,7 +51,7 @@ func TestSomething(t *testing.T) {
 
     // Check against contents of a file (relative to $CWD/testdata)
     // including line ending normalisation
-    test.File(t, "expected.txt", "hello\n")
+    test.File(t, "hello\n", "expected.txt")
 
     // Just like the good old reflect.DeepEqual, but with a nicer format
     test.DeepEqual(t, []string{"hello"}, []string{"world"}) // Fails

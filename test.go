@@ -4,7 +4,6 @@ package test
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"math"
 	"os"
@@ -76,37 +75,25 @@ func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 	}
 }
 
-// Ok fails if err != nil, optionally adding context to the output.
+// Ok fails if err != nil.
 //
 //	err := doSomething()
 //	test.Ok(t, err, "Doing something")
-func Ok(t testing.TB, err error, context ...string) {
+func Ok(t testing.TB, err error) {
 	t.Helper()
-	var msg string
-	if len(context) == 0 {
-		msg = fmt.Sprintf("\nGot error:\t%v\nWanted:\tnil\n", err)
-	} else {
-		msg = fmt.Sprintf("\nGot error:\t%v\nWanted:\tnil\nContext:\t%s\n", err, context[0])
-	}
 	if err != nil {
-		t.Fatalf(msg, err)
+		t.Fatalf("\nGot error:\t%v\nWanted:\tnil\n", err)
 	}
 }
 
 // Err fails if err == nil.
 //
 //	err := shouldReturnErr()
-//	test.Err(t, err, "shouldReturnErr")
-func Err(t testing.TB, err error, context ...string) {
+//	test.Err(t, err)
+func Err(t testing.TB, err error) {
 	t.Helper()
-	var msg string
-	if len(context) == 0 {
-		msg = fmt.Sprintf("Error was not nil:\t%v\n", err)
-	} else {
-		msg = fmt.Sprintf("Error was not nil:\t%v\nContext:\t%s", err, context[0])
-	}
 	if err == nil {
-		t.Fatalf(msg, err)
+		t.Fatalf("Error was not nil:\t%v\n", err)
 	}
 }
 

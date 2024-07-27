@@ -93,7 +93,7 @@ func Ok(t testing.TB, err error) {
 func Err(t testing.TB, err error) {
 	t.Helper()
 	if err == nil {
-		t.Fatalf("Error was not nil:\t%v\n", err)
+		t.Fatalf("Error was nil\n")
 	}
 }
 

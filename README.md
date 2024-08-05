@@ -40,9 +40,6 @@ func TestSomething(t *testing.T) {
     test.Ok(t, err) // Fails if err != nil
     test.Err(t, err) // Fails if err == nil
 
-    // Can even add context
-    test.Ok(t, err, "doSomething went wrong")
-
     test.True(t, true) // Passes
     test.False(t, true) // Fails
 

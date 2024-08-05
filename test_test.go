@@ -104,7 +104,7 @@ func TestPass(t *testing.T) {
 		"DeepEqual string slice": func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"hello"}) },
 		"WantErr true":           func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), true) },
 		"WantErr false":          func(tb testing.TB) { test.WantErr(tb, nilErr(), false) },
-		"File":                   func(tb testing.TB) { test.File(tb, "hello\n", "file.txt") },
+		"File":                   func(tb testing.TB) { test.File(tb, "hello\n", filepath.Join(test.Data(t), "file.txt")) },
 	}
 
 	for name, fn := range passFns {
@@ -177,7 +177,7 @@ func TestFail(t *testing.T) {
 		"DeepEqual string slice": func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"world"}) },
 		"WantErr true":           func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), false) },
 		"WantErr false":          func(tb testing.TB) { test.WantErr(tb, nilErr(), true) },
-		"File wrong":             func(tb testing.TB) { test.File(tb, "wrong\n", "file.txt") },
+		"File wrong":             func(tb testing.TB) { test.File(tb, "wrong\n", filepath.Join(test.Data(t), "file.txt")) },
 		"File missing":           func(tb testing.TB) { test.File(tb, "wrong\n", "missing.txt") },
 	}
 

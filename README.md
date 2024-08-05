@@ -49,9 +49,9 @@ func TestSomething(t *testing.T) {
     // Get $CWD/testdata easily
     test.Data(t) // /Users/you/project/package/testdata
 
-    // Check against contents of a file (relative to $CWD/testdata)
-    // including line ending normalisation
-    test.File(t, "hello\n", "expected.txt")
+    // Check against contents of a file including line ending normalisation
+    file := filepath.Join(test.Data(t), "expected.txt")
+    test.File(t, "hello\n", file)
 
     // Just like the good old reflect.DeepEqual, but with a nicer format
     test.DeepEqual(t, []string{"hello"}, []string{"world"}) // Fails

@@ -182,7 +182,8 @@ func Data(t testing.TB) string {
 
 // File fails if got does not match the contents of the given file.
 //
-// It takes a string and the name of a file (relative to $CWD/testdata) to compare.
+// It takes a string and the path of a file to compare, use [Data] to obtain
+// the path to the current packages testdata directory.
 //
 // If the contents differ, the test will fail with output equivalent to [Diff].
 //
@@ -192,10 +193,13 @@ func Data(t testing.TB) string {
 //	test.File(t, "hello\n", "expected.txt")
 func File(t testing.TB, got, file string) {
 	t.Helper()
-	file = filepath.Join(Data(t), file)
-	contents, err := os.ReadFile(file)
+	f, err := filepath.Abs(file)
 	if err != nil {
-		t.Fatalf("could not read %s: %v", file, err)
+		t.Fatalf("could not make %s absolute: %v", file, err)
+	}
+	contents, err := os.ReadFile(f)
+	if err != nil {
+		t.Fatalf("could not read %s: %v", f, err)
 	}
 
 	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))

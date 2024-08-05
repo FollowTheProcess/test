@@ -78,7 +78,7 @@ func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 // Ok fails if err != nil.
 //
 //	err := doSomething()
-//	test.Ok(t, err, "Doing something")
+//	test.Ok(t, err)
 func Ok(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {

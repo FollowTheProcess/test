@@ -141,8 +141,6 @@ func False(t testing.TB, v bool) {
 }
 
 // Diff fails if got != want and provides a rich diff.
-//
-// If got and want are structs, unexported fields will be included in the comparison.
 func Diff(t testing.TB, got, want any) {
 	// TODO: Nicer output for diff, don't like the +got -want thing, also newline consistency
 	t.Helper()

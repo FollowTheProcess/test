@@ -37,6 +37,8 @@ func Equal[T comparable](t testing.TB, got, want T) {
 //	test.NearlyEqual(t, 3.0000001, 3.0) // Fails, too different
 func NearlyEqual[T ~float32 | ~float64](t testing.TB, got, want T) {
 	t.Helper()
+	// TODO: Message here could be better, we should say how far away it was and that
+	// it exceeds the float equality threshold
 	if math.Abs(float64(got-want)) >= floatEqualityThreshold {
 		t.Fatalf("\nGot:\t%v\nWanted:\t%v\n", got, want)
 	}
@@ -48,6 +50,7 @@ func NearlyEqual[T ~float32 | ~float64](t testing.TB, got, want T) {
 // The comparator should return true if the two items should be considered equal.
 func EqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 	t.Helper()
+	// TODO: Better message saying equal returned false
 	if !equal(got, want) {
 		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
 	}
@@ -120,6 +123,7 @@ func WantErr(t testing.TB, err error, want bool) {
 //	test.True(t, false) // Fails
 func True(t testing.TB, v bool) {
 	t.Helper()
+	// TODO: Newline consistency
 	if !v {
 		t.Fatalf("\nGot:\t%v\nWanted:\t%v", v, true)
 	}
@@ -137,18 +141,11 @@ func False(t testing.TB, v bool) {
 }
 
 // Diff fails if got != want and provides a rich diff.
-//
-// If got and want are structs, unexported fields will be included in the comparison.
 func Diff(t testing.TB, got, want any) {
+	// TODO: Nicer output for diff, don't like the +got -want thing, also newline consistency
 	t.Helper()
-	if reflect.TypeOf(got).Kind() == reflect.Struct {
-		if diff := cmp.Diff(want, got, cmp.AllowUnexported(got, want)); diff != "" {
-			t.Fatalf("Mismatch (-want, +got):\n%s", diff)
-		}
-	} else {
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want, +got):\n%s", diff)
-		}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("Mismatch (-want, +got):\n%s", diff)
 	}
 }
 

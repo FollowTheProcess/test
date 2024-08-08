@@ -10,8 +10,11 @@ import (
 	"testing"
 
 	"github.com/FollowTheProcess/test"
+	"github.com/google/go-cmp/cmp"
 )
 
+// TB is a fake implementation of [testing.TB] that simply records in internal
+// state whether or not it would have failed and what it would have written.
 type TB struct {
 	testing.TB
 	out    io.Writer
@@ -25,164 +28,336 @@ func (t *TB) Fatalf(format string, args ...any) {
 	fmt.Fprintf(t.out, format, args...)
 }
 
-func TestPass(t *testing.T) {
-	shouldPass := func(name string, fn func(tb testing.TB)) {
-		t.Helper()
-		buf := &bytes.Buffer{}
-		tb := &TB{out: buf}
+// TODO: Refactor all the tests below to fit into this table
 
-		if tb.failed {
-			t.Fatalf("%s initial failed state should be false", name)
-		}
+func TestPassFail(t *testing.T) {
+	tests := []struct {
+		testFunc func(tb testing.TB) // The test function we're... testing
+		wantOut  string              // What we wanted the TB to print
+		name     string              // Name of the test case
+		wantFail bool                // Whether we wanted the testFunc to fail it's TB
+	}{
+		{
+			name: "equal string pass",
+			testFunc: func(tb testing.TB) {
+				test.Equal(tb, "apples", "apples") // These obviously are equal
+			},
+			wantFail: false, // Should pass
+			wantOut:  "",    // And write no output
+		},
+		{
+			name: "equal string fail",
+			testFunc: func(tb testing.TB) {
+				test.Equal(tb, "apples", "oranges")
+			},
+			wantFail: true,
+			wantOut:  "\nGot:\tapples\nWanted:\toranges\n",
+		},
+		{
+			name: "equal int pass",
+			testFunc: func(tb testing.TB) {
+				test.Equal(tb, 1, 1)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "equal int fail",
+			testFunc: func(tb testing.TB) {
+				test.Equal(tb, 1, 42)
+			},
+			wantFail: true,
+			wantOut:  "\nGot:\t1\nWanted:\t42\n",
+		},
+		{
+			name: "nearly equal pass",
+			testFunc: func(tb testing.TB) {
+				test.NearlyEqual(tb, 3.0000000001, 3.0)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "nearly equal fail",
+			testFunc: func(tb testing.TB) {
+				test.NearlyEqual(tb, 3.0000001, 3.0)
+			},
+			wantFail: true,
+			wantOut:  "\nGot:\t3.0000001\nWanted:\t3\n",
+		},
+		{
+			name: "not equal string pass",
+			testFunc: func(tb testing.TB) {
+				test.NotEqual(tb, "apples", "oranges") // Should pass, these aren't equal
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "not equal string fail",
+			testFunc: func(tb testing.TB) {
+				test.NotEqual(tb, "apples", "apples")
+			},
+			wantFail: true,
+			wantOut:  "\nValues were equal:\tapples\n",
+		},
+		{
+			name: "not equal int pass",
+			testFunc: func(tb testing.TB) {
+				test.NotEqual(tb, 1, 42)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "not equal int fail",
+			testFunc: func(tb testing.TB) {
+				test.NotEqual(tb, 1, 1)
+			},
+			wantFail: true,
+			wantOut:  "\nValues were equal:\t1\n",
+		},
+		{
+			name: "ok pass",
+			testFunc: func(tb testing.TB) {
+				test.Ok(tb, nil)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "ok fail",
+			testFunc: func(tb testing.TB) {
+				test.Ok(tb, errors.New("uh oh"))
+			},
+			wantFail: true,
+			wantOut:  "\nGot error:\tuh oh\nWanted:\tnil\n",
+		},
+		{
+			name: "err pass",
+			testFunc: func(tb testing.TB) {
+				test.Err(tb, errors.New("uh oh"))
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "err fail",
+			testFunc: func(tb testing.TB) {
+				test.Err(tb, nil)
+			},
+			wantFail: true,
+			wantOut:  "Error was nil\n",
+		},
+		{
+			name: "true pass",
+			testFunc: func(tb testing.TB) {
+				test.True(tb, true)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "true fail",
+			testFunc: func(tb testing.TB) {
+				test.True(tb, false)
+			},
+			wantFail: true,
+			wantOut:  "\nGot:\tfalse\nWanted:\ttrue",
+		},
+		{
+			name: "false pass",
+			testFunc: func(tb testing.TB) {
+				test.False(tb, false)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "false fail",
+			testFunc: func(tb testing.TB) {
+				test.False(tb, true)
+			},
+			wantFail: true,
+			wantOut:  "\nGot:\ttrue\nWanted:\tfalse",
+		},
+		{
+			name: "equal func pass",
+			testFunc: func(tb testing.TB) {
+				rubbishEqual := func(a, b string) bool {
+					return true // Always equal
+				}
+				test.EqualFunc(tb, "word", "different word", rubbishEqual)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "equal func fail",
+			testFunc: func(tb testing.TB) {
+				rubbishEqual := func(a, b string) bool {
+					return false // Never equal
+				}
+				test.EqualFunc(tb, "word", "word", rubbishEqual)
+			},
+			wantFail: true,
+			wantOut:  "\nGot:\tword\nWanted:\tword\n",
+		},
+		{
+			name: "not equal func pass",
+			testFunc: func(tb testing.TB) {
+				rubbishNotEqual := func(a, b string) bool {
+					return false // Never equal
+				}
+				test.NotEqualFunc(tb, "word", "word", rubbishNotEqual)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "not equal func fail",
+			testFunc: func(tb testing.TB) {
+				rubbishNotEqual := func(a, b string) bool {
+					return true // Always equal
+				}
+				test.NotEqualFunc(tb, "word", "different word", rubbishNotEqual)
+			},
+			wantFail: true,
+			wantOut:  "\nValues were equal:\tword\n",
+		},
+		{
+			name: "deep equal pass",
+			testFunc: func(tb testing.TB) {
+				a := []string{"a", "b", "c"}
+				b := []string{"a", "b", "c"}
 
-		// Call our test function
-		fn(tb)
+				test.DeepEqual(tb, a, b)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "deep equal fail",
+			testFunc: func(tb testing.TB) {
+				a := []string{"a", "b", "c"}
+				b := []string{"d", "e", "f"}
 
-		if tb.failed {
-			t.Fatalf("%s should have passed", name)
-		}
-
-		if buf.String() != "" {
-			t.Fatalf(
-				"%s houldn't have written anything on success\nGot:\t%+v\n",
-				name,
-				buf.String(),
-			)
-		}
+				test.DeepEqual(tb, a, b)
+			},
+			wantFail: true,
+			wantOut:  "\nGot:\t[a b c]\nWanted:\t[d e f]\n",
+		},
+		{
+			name: "want err pass when got and wanted",
+			testFunc: func(tb testing.TB) {
+				test.WantErr(tb, errors.New("uh oh"), true) // We wanted an error and got one
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "want err fail when got and not wanted",
+			testFunc: func(tb testing.TB) {
+				test.WantErr(tb, errors.New("uh oh"), false) // Didn't want an error but got one
+			},
+			wantFail: true,
+			wantOut:  "\nGot error:\tuh oh\nWanted error:\tfalse\n",
+		},
+		{
+			name: "want err pass when not got and not wanted",
+			testFunc: func(tb testing.TB) {
+				test.WantErr(tb, nil, false) // Didn't want an error and didn't get one
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "want err fail when not got but wanted",
+			testFunc: func(tb testing.TB) {
+				test.WantErr(tb, nil, true) // Wanted an error but didn't get one
+			},
+			wantFail: true,
+			wantOut:  "\nGot error:\t<nil>\nWanted error:\ttrue\n",
+		},
+		{
+			name: "file pass",
+			testFunc: func(tb testing.TB) {
+				test.File(tb, "hello\n", filepath.Join(test.Data(t), "file.txt"))
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "diff pass string",
+			testFunc: func(tb testing.TB) {
+				test.Diff(tb, "hello", "hello")
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "diff fail string",
+			testFunc: func(tb testing.TB) {
+				test.Diff(tb, "hello", "hello there")
+			},
+			wantFail: true,
+			wantOut: fmt.Sprintf(
+				"Mismatch (-want, +got):\n%s",
+				cmp.Diff("hello there", "hello"),
+			), // Output equivalent to diff
+		},
+		{
+			name: "diff pass string slice",
+			testFunc: func(tb testing.TB) {
+				got := []string{"hello", "there"}
+				want := []string{"hello", "there"}
+				test.Diff(tb, got, want)
+			},
+			wantFail: false,
+			wantOut:  "",
+		},
+		{
+			name: "diff fail string slice",
+			testFunc: func(tb testing.TB) {
+				got := []string{"hello", "there"}
+				want := []string{"not", "me"}
+				test.Diff(tb, got, want)
+			},
+			wantFail: true,
+			wantOut: fmt.Sprintf(
+				"Mismatch (-want, +got):\n%s",
+				cmp.Diff([]string{"not", "me"}, []string{"hello", "there"}),
+			), // Output equivalent to diff
+		},
 	}
 
-	// All functions that should not fail their test TB
-	passFns := map[string]func(tb testing.TB){
-		"Equal string":      func(tb testing.TB) { test.Equal(tb, "hello", "hello") },
-		"Equal int":         func(tb testing.TB) { test.Equal(tb, 42, 42) },
-		"Equal bool":        func(tb testing.TB) { test.Equal(tb, true, true) },
-		"Equal float":       func(tb testing.TB) { test.Equal(tb, 3.14, 3.14) },
-		"NearlyEqual":       func(tb testing.TB) { test.NearlyEqual(tb, 3.0000000001, 3.0) },
-		"NotEqual string":   func(tb testing.TB) { test.NotEqual(tb, "hello", "there") },
-		"NotEqual int":      func(tb testing.TB) { test.NotEqual(tb, 42, 27) },
-		"NotEqual bool":     func(tb testing.TB) { test.NotEqual(tb, true, false) },
-		"NotEqual float":    func(tb testing.TB) { test.NotEqual(tb, 3.14, 8.67) },
-		"Ok nil":            func(tb testing.TB) { test.Ok(tb, nil) },
-		"Err":               func(tb testing.TB) { test.Err(tb, errors.New("uh oh")) },
-		"True":              func(tb testing.TB) { test.True(tb, true) },
-		"False":             func(tb testing.TB) { test.False(tb, false) },
-		"Diff int":          func(tb testing.TB) { test.Diff(tb, 42, 42) },
-		"Diff bool":         func(tb testing.TB) { test.Diff(tb, true, true) },
-		"Diff string":       func(tb testing.TB) { test.Diff(tb, "hello", "hello") },
-		"Diff float":        func(tb testing.TB) { test.Diff(tb, 3.14, 3.14) },
-		"Diff string slice": func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"hello"}) },
-		"EqualFunc string": func(tb testing.TB) {
-			test.EqualFunc(tb, "something", "equal", func(_, _ string) bool { return true })
-		},
-		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 42, func(_, _ int) bool { return true }) },
-		"EqualFunc string slice": func(tb testing.TB) {
-			test.EqualFunc(
-				tb,
-				[]string{"hello"},
-				[]string{"hello"},
-				func(_, _ []string) bool { return true },
-			)
-		},
-		"NotEqualFunc string": func(tb testing.TB) {
-			test.NotEqualFunc(tb, "something", "different", func(_, _ string) bool { return false })
-		},
-		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 12, func(_, _ int) bool { return false }) },
-		"NotEqualFunc string slice": func(tb testing.TB) {
-			test.NotEqualFunc(
-				tb,
-				[]string{"hello"},
-				[]string{"something", "else"},
-				func(_, _ []string) bool { return false },
-			)
-		},
-		"Diff unexported struct": func(tb testing.TB) {
-			test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "dave"})
-		},
-		"Diff exported struct": func(tb testing.TB) {
-			test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "dave"})
-		},
-		"DeepEqual string slice": func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"hello"}) },
-		"WantErr true":           func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), true) },
-		"WantErr false":          func(tb testing.TB) { test.WantErr(tb, nilErr(), false) },
-		"File":                   func(tb testing.TB) { test.File(tb, "hello\n", filepath.Join(test.Data(t), "file.txt")) },
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			tb := &TB{out: buf}
 
-	for name, fn := range passFns {
-		shouldPass(name, fn)
-	}
-}
+			if tb.failed {
+				t.Fatalf("%s initial failed state should be false", tt.name)
+			}
 
-func TestFail(t *testing.T) {
-	shouldFail := func(name string, fn func(tb testing.TB)) {
-		t.Helper()
-		buf := &bytes.Buffer{}
-		tb := &TB{out: buf}
+			// Call the test function, passing in our mock TB that simply
+			// records whether or not it would have failed and what it would
+			// have written
+			tt.testFunc(tb)
 
-		if tb.failed {
-			t.Fatalf("%s initial failed state should be false", name)
-		}
+			if tb.failed != tt.wantFail {
+				t.Errorf(
+					"%s failure mismatch. failed: %v, wanted failure: %v",
+					tt.name,
+					tb.failed,
+					tt.wantFail,
+				)
+			}
 
-		// Call our test function
-		fn(tb)
-
-		if !tb.failed {
-			t.Fatalf("%s should have failed", name)
-		}
-
-		if buf.String() == "" {
-			t.Fatalf("%s should have written on failure", name)
-		}
-	}
-
-	// All functions that should fail their test TB
-	failFns := map[string]func(tb testing.TB){
-		"Equal string":      func(tb testing.TB) { test.Equal(tb, "something", "else") },
-		"Equal int":         func(tb testing.TB) { test.Equal(tb, 42, 27) },
-		"Equal bool":        func(tb testing.TB) { test.Equal(tb, true, false) },
-		"Equal float":       func(tb testing.TB) { test.Equal(tb, 3.14, 8.96) },
-		"NearlyEqual":       func(tb testing.TB) { test.NearlyEqual(tb, 3.0000001, 3.0) },
-		"NotEqual string":   func(tb testing.TB) { test.NotEqual(tb, "something", "something") },
-		"NotEqual int":      func(tb testing.TB) { test.NotEqual(tb, 42, 42) },
-		"NotEqual bool":     func(tb testing.TB) { test.NotEqual(tb, true, true) },
-		"NotEqual float":    func(tb testing.TB) { test.NotEqual(tb, 3.14, 3.14) },
-		"Ok":                func(tb testing.TB) { test.Ok(tb, errors.New("uh oh")) },
-		"Err":               func(tb testing.TB) { test.Err(tb, nilErr()) },
-		"True":              func(tb testing.TB) { test.True(tb, false) },
-		"False":             func(tb testing.TB) { test.False(tb, true) },
-		"Diff string":       func(tb testing.TB) { test.Diff(tb, "hello", "there") },
-		"Diff int":          func(tb testing.TB) { test.Diff(tb, 42, 27) },
-		"Diff bool":         func(tb testing.TB) { test.Diff(tb, true, false) },
-		"Diff float":        func(tb testing.TB) { test.Diff(tb, 3.14, 8.69) },
-		"Diff string slice": func(tb testing.TB) { test.Diff(tb, []string{"hello"}, []string{"there"}) },
-		"EqualFunc string": func(tb testing.TB) {
-			test.EqualFunc(tb, "something", "different", func(_, _ string) bool { return false })
-		},
-		"EqualFunc int": func(tb testing.TB) { test.EqualFunc(tb, 42, 127, func(_, _ int) bool { return false }) },
-		"EqualFunc string slice": func(tb testing.TB) {
-			test.EqualFunc(tb, []int{42}, []int{27}, func(_, _ []int) bool { return false })
-		},
-		"NotEqualFunc string": func(tb testing.TB) {
-			test.NotEqualFunc(tb, "something", "something", func(_, _ string) bool { return true })
-		},
-		"NotEqualFunc int": func(tb testing.TB) { test.NotEqualFunc(tb, 42, 42, func(_, _ int) bool { return true }) },
-		"NotEqualFunc int slice": func(tb testing.TB) {
-			test.NotEqualFunc(tb, []int{42}, []int{42}, func(_, _ []int) bool { return true })
-		},
-		"Diff unexported struct": func(tb testing.TB) {
-			test.Diff(tb, struct{ name string }{name: "dave"}, struct{ name string }{name: "john"})
-		},
-		"Diff exported struct": func(tb testing.TB) {
-			test.Diff(tb, struct{ Name string }{Name: "dave"}, struct{ Name string }{Name: "john"})
-		},
-		"DeepEqual string slice": func(tb testing.TB) { test.DeepEqual(tb, []string{"hello"}, []string{"world"}) },
-		"WantErr true":           func(tb testing.TB) { test.WantErr(tb, errors.New("uh oh"), false) },
-		"WantErr false":          func(tb testing.TB) { test.WantErr(tb, nilErr(), true) },
-		"File wrong":             func(tb testing.TB) { test.File(tb, "wrong\n", filepath.Join(test.Data(t), "file.txt")) },
-		"File missing":           func(tb testing.TB) { test.File(tb, "wrong\n", "missing.txt") },
-	}
-
-	for name, fn := range failFns {
-		shouldFail(name, fn)
+			if got := buf.String(); got != tt.wantOut {
+				t.Errorf("%s output mismatch. got: %s, wanted %s", tt.name, got, tt.wantOut)
+			}
+		})
 	}
 }
 
@@ -235,10 +410,4 @@ func TestCapture(t *testing.T) {
 		test.Equal(t, stdout, "")
 		test.Equal(t, stderr, "")
 	})
-}
-
-// Always returns a nil error, needed because manually constructing
-// nil means it's not an error type but here it is.
-func nilErr() error {
-	return nil
 }

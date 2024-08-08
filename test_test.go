@@ -51,7 +51,7 @@ func TestPassFail(t *testing.T) {
 				test.Equal(tb, "apples", "oranges")
 			},
 			wantFail: true,
-			wantOut:  "\nGot:\tapples\nWanted:\toranges\n",
+			wantOut:  "\nNot Equal\n---------\nGot:\tapples\nWanted:\toranges\n",
 		},
 		{
 			name: "equal int pass",
@@ -67,7 +67,7 @@ func TestPassFail(t *testing.T) {
 				test.Equal(tb, 1, 42)
 			},
 			wantFail: true,
-			wantOut:  "\nGot:\t1\nWanted:\t42\n",
+			wantOut:  "\nNot Equal\n---------\nGot:\t1\nWanted:\t42\n",
 		},
 		{
 			name: "nearly equal pass",
@@ -83,7 +83,7 @@ func TestPassFail(t *testing.T) {
 				test.NearlyEqual(tb, 3.0000001, 3.0)
 			},
 			wantFail: true,
-			wantOut:  "\nGot:\t3.0000001\nWanted:\t3\n",
+			wantOut:  "\nNot NearlyEqual\n---------------\nGot:\t3.0000001\nWanted:\t3\n\nDifference 9.999999983634211e-08 exceeds maximum tolerance of 1e-08\n",
 		},
 		{
 			name: "not equal string pass",
@@ -131,7 +131,7 @@ func TestPassFail(t *testing.T) {
 				test.Ok(tb, errors.New("uh oh"))
 			},
 			wantFail: true,
-			wantOut:  "\nGot error:\tuh oh\nWanted:\tnil\n",
+			wantOut:  "\nNot Ok\n------\nGot error:\tuh oh\n",
 		},
 		{
 			name: "err pass",
@@ -147,7 +147,7 @@ func TestPassFail(t *testing.T) {
 				test.Err(tb, nil)
 			},
 			wantFail: true,
-			wantOut:  "Error was nil\n",
+			wantOut:  "\nNot Err\n-------\nError was nil\n",
 		},
 		{
 			name: "true pass",
@@ -163,7 +163,7 @@ func TestPassFail(t *testing.T) {
 				test.True(tb, false)
 			},
 			wantFail: true,
-			wantOut:  "\nGot:\tfalse\nWanted:\ttrue",
+			wantOut:  "\nNot True\n--------\nGot:\tfalse\n",
 		},
 		{
 			name: "false pass",
@@ -179,7 +179,7 @@ func TestPassFail(t *testing.T) {
 				test.False(tb, true)
 			},
 			wantFail: true,
-			wantOut:  "\nGot:\ttrue\nWanted:\tfalse",
+			wantOut:  "\nNot False\n--------\nGot:\ttrue\n",
 		},
 		{
 			name: "equal func pass",
@@ -201,7 +201,7 @@ func TestPassFail(t *testing.T) {
 				test.EqualFunc(tb, "word", "word", rubbishEqual)
 			},
 			wantFail: true,
-			wantOut:  "\nGot:\tword\nWanted:\tword\n",
+			wantOut:  "\nNot Equal\n---------\nGot:\tword\nWanted:\tword\n\nequal(got, want) returned false\n",
 		},
 		{
 			name: "not equal func pass",
@@ -223,7 +223,7 @@ func TestPassFail(t *testing.T) {
 				test.NotEqualFunc(tb, "word", "different word", rubbishNotEqual)
 			},
 			wantFail: true,
-			wantOut:  "\nValues were equal:\tword\n",
+			wantOut:  "\nValues were equal:\tword\n\nequal(got, want) returned true\n",
 		},
 		{
 			name: "deep equal pass",
@@ -245,7 +245,7 @@ func TestPassFail(t *testing.T) {
 				test.DeepEqual(tb, a, b)
 			},
 			wantFail: true,
-			wantOut:  "\nGot:\t[a b c]\nWanted:\t[d e f]\n",
+			wantOut:  "\nNot Equal\n---------\nGot:\t[a b c]\nWanted:\t[d e f]\n\nreflect.DeepEqual(got, want) returned false\n",
 		},
 		{
 			name: "want err pass when got and wanted",
@@ -261,7 +261,7 @@ func TestPassFail(t *testing.T) {
 				test.WantErr(tb, errors.New("uh oh"), false) // Didn't want an error but got one
 			},
 			wantFail: true,
-			wantOut:  "\nGot error:\tuh oh\nWanted error:\tfalse\n",
+			wantOut:  "\nWantErr\n-------\nGot error:\tuh oh\nWanted error:\tfalse\n",
 		},
 		{
 			name: "want err pass when not got and not wanted",
@@ -277,7 +277,7 @@ func TestPassFail(t *testing.T) {
 				test.WantErr(tb, nil, true) // Wanted an error but didn't get one
 			},
 			wantFail: true,
-			wantOut:  "\nGot error:\t<nil>\nWanted error:\ttrue\n",
+			wantOut:  "\nWantErr\n-------\nGot error:\t<nil>\nWanted error:\ttrue\n",
 		},
 		{
 			name: "file pass",
@@ -302,7 +302,7 @@ func TestPassFail(t *testing.T) {
 			},
 			wantFail: true,
 			wantOut: fmt.Sprintf(
-				"Mismatch (-want, +got):\n%s",
+				"\nMismatch (-want, +got):\n%s\n",
 				cmp.Diff("hello there", "hello"),
 			), // Output equivalent to diff
 		},
@@ -325,7 +325,7 @@ func TestPassFail(t *testing.T) {
 			},
 			wantFail: true,
 			wantOut: fmt.Sprintf(
-				"Mismatch (-want, +got):\n%s",
+				"\nMismatch (-want, +got):\n%s\n",
 				cmp.Diff([]string{"not", "me"}, []string{"hello", "there"}),
 			), // Output equivalent to diff
 		},
@@ -346,8 +346,8 @@ func TestPassFail(t *testing.T) {
 			tt.testFunc(tb)
 
 			if tb.failed != tt.wantFail {
-				t.Errorf(
-					"%s failure mismatch. failed: %v, wanted failure: %v",
+				t.Fatalf(
+					"\n%s failure mismatch\n--------------\nfailed:\t%v\nwanted failure:\t%v\n",
 					tt.name,
 					tb.failed,
 					tt.wantFail,
@@ -355,7 +355,12 @@ func TestPassFail(t *testing.T) {
 			}
 
 			if got := buf.String(); got != tt.wantOut {
-				t.Errorf("%s output mismatch. got: %s, wanted %s", tt.name, got, tt.wantOut)
+				t.Errorf(
+					"\n%s output mismatch\n---------------\nGot:\t%s\nWanted:\t%s\n",
+					tt.name,
+					got,
+					tt.wantOut,
+				)
 			}
 		})
 	}

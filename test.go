@@ -25,7 +25,7 @@ const floatEqualityThreshold = 1e-8
 func Equal[T comparable](t testing.TB, got, want T) {
 	t.Helper()
 	if got != want {
-		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
+		t.Fatalf("\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n", got, want)
 	}
 }
 
@@ -37,10 +37,15 @@ func Equal[T comparable](t testing.TB, got, want T) {
 //	test.NearlyEqual(t, 3.0000001, 3.0) // Fails, too different
 func NearlyEqual[T ~float32 | ~float64](t testing.TB, got, want T) {
 	t.Helper()
-	// TODO: Message here could be better, we should say how far away it was and that
-	// it exceeds the float equality threshold
-	if math.Abs(float64(got-want)) >= floatEqualityThreshold {
-		t.Fatalf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+	diff := math.Abs(float64(got - want))
+	if diff >= floatEqualityThreshold {
+		t.Fatalf(
+			"\nNot NearlyEqual\n---------------\nGot:\t%v\nWanted:\t%v\n\nDifference %v exceeds maximum tolerance of %v\n",
+			got,
+			want,
+			diff,
+			floatEqualityThreshold,
+		)
 	}
 }
 
@@ -50,9 +55,12 @@ func NearlyEqual[T ~float32 | ~float64](t testing.TB, got, want T) {
 // The comparator should return true if the two items should be considered equal.
 func EqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 	t.Helper()
-	// TODO: Better message saying equal returned false
 	if !equal(got, want) {
-		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
+		t.Fatalf(
+			"\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n\nequal(got, want) returned false\n",
+			got,
+			want,
+		)
 	}
 }
 
@@ -74,7 +82,7 @@ func NotEqual[T comparable](t testing.TB, got, want T) {
 func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 	t.Helper()
 	if equal(got, want) {
-		t.Fatalf("\nValues were equal:\t%+v\n", got)
+		t.Fatalf("\nValues were equal:\t%+v\n\nequal(got, want) returned true\n", got)
 	}
 }
 
@@ -85,7 +93,7 @@ func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 func Ok(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {
-		t.Fatalf("\nGot error:\t%v\nWanted:\tnil\n", err)
+		t.Fatalf("\nNot Ok\n------\nGot error:\t%v\n", err)
 	}
 }
 
@@ -96,7 +104,7 @@ func Ok(t testing.TB, err error) {
 func Err(t testing.TB, err error) {
 	t.Helper()
 	if err == nil {
-		t.Fatalf("Error was nil\n")
+		t.Fatalf("\nNot Err\n-------\nError was nil\n")
 	}
 }
 
@@ -113,7 +121,7 @@ func Err(t testing.TB, err error) {
 func WantErr(t testing.TB, err error, want bool) {
 	t.Helper()
 	if (err != nil) != want {
-		t.Fatalf("\nGot error:\t%v\nWanted error:\t%v\n", err, want)
+		t.Fatalf("\nWantErr\n-------\nGot error:\t%v\nWanted error:\t%v\n", err, want)
 	}
 }
 
@@ -123,9 +131,8 @@ func WantErr(t testing.TB, err error, want bool) {
 //	test.True(t, false) // Fails
 func True(t testing.TB, v bool) {
 	t.Helper()
-	// TODO: Newline consistency
 	if !v {
-		t.Fatalf("\nGot:\t%v\nWanted:\t%v", v, true)
+		t.Fatalf("\nNot True\n--------\nGot:\t%v\n", v)
 	}
 }
 
@@ -136,16 +143,16 @@ func True(t testing.TB, v bool) {
 func False(t testing.TB, v bool) {
 	t.Helper()
 	if v {
-		t.Fatalf("\nGot:\t%v\nWanted:\t%v", v, false)
+		t.Fatalf("\nNot False\n--------\nGot:\t%v\n", v)
 	}
 }
 
 // Diff fails if got != want and provides a rich diff.
 func Diff(t testing.TB, got, want any) {
-	// TODO: Nicer output for diff, don't like the +got -want thing, also newline consistency
+	// TODO: Nicer output for diff, don't like the +got -want thing
 	t.Helper()
 	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("Mismatch (-want, +got):\n%s", diff)
+		t.Fatalf("\nMismatch (-want, +got):\n%s\n", diff)
 	}
 }
 
@@ -153,7 +160,11 @@ func Diff(t testing.TB, got, want any) {
 func DeepEqual(t testing.TB, got, want any) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("\nGot:\t%+v\nWanted:\t%+v\n", got, want)
+		t.Fatalf(
+			"\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n\nreflect.DeepEqual(got, want) returned false\n",
+			got,
+			want,
+		)
 	}
 }
 

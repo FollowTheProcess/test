@@ -28,8 +28,6 @@ func (t *TB) Fatalf(format string, args ...any) {
 	fmt.Fprintf(t.out, format, args...)
 }
 
-// TODO: Refactor all the tests below to fit into this table
-
 func TestPassFail(t *testing.T) {
 	tests := []struct {
 		testFunc func(tb testing.TB) // The test function we're... testing

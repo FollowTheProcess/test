@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/aymanbagabas/go-udiff"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -193,7 +194,8 @@ func Data(t testing.TB) string {
 // It takes a string and the path of a file to compare, use [Data] to obtain
 // the path to the current packages testdata directory.
 //
-// If the contents differ, the test will fail with output equivalent to [Diff].
+// If the contents differ, the test will fail with output similar to executing git diff
+// on the contents.
 //
 // Files with differing line endings (e.g windows CR LF \r\n vs unix LF \n) will be normalised to
 // \n prior to comparison so this function will behave identically across multiple platforms.
@@ -212,7 +214,9 @@ func File(t testing.TB, got, file string) {
 
 	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 
-	Diff(t, got, string(contents))
+	if diff := udiff.Unified("want", "got", string(contents), got); diff != "" {
+		t.Fatalf("\nMismatch\n--------\n%s\n", diff)
+	}
 }
 
 // CaptureOutput captures and returns data printed to stdout and stderr by the provided function fn, allowing

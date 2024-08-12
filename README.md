@@ -208,6 +208,29 @@ func TestOutput(t *testing.T) {
 
 Under the hood `CaptureOutput` temporarily captures both streams, copies the data to a buffer and returns the output back to you, before cleaning everything back up again.
 
+### Golden Files
+
+`test` has great support for golden files:
+
+```go
+func TestFile(t *testing.T) {
+    got := "some contents\n"
+    want := filepath.Join(test.Data(t), "golden.txt")
+
+    test.File(t, got, want)
+}
+```
+
+This wil read the file, normalise line endings and then generate an output almost like a git diff:
+
+```patch
+--- want
++++ got
+@@ -1 +1 @@
+-some file contents
++some contents
+```
+
 ### Credits
 
 This package was created with [copier] and the [FollowTheProcess/go_copier] project template.

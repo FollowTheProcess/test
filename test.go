@@ -23,10 +23,10 @@ const floatEqualityThreshold = 1e-8
 //
 //	test.Equal(t, "apples", "apples") // Passes
 //	test.Equal(t, "apples", "oranges") // Fails
-func Equal[T comparable](t testing.TB, got, want T) {
-	t.Helper()
+func Equal[T comparable](tb testing.TB, got, want T) {
+	tb.Helper()
 	if got != want {
-		t.Fatalf("\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n", got, want)
+		tb.Fatalf("\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n", got, want)
 	}
 }
 
@@ -36,11 +36,11 @@ func Equal[T comparable](t testing.TB, got, want T) {
 //
 //	test.NearlyEqual(t, 3.0000000001, 3.0) // Passes, close enough to be considered equal
 //	test.NearlyEqual(t, 3.0000001, 3.0) // Fails, too different
-func NearlyEqual[T ~float32 | ~float64](t testing.TB, got, want T) {
-	t.Helper()
+func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T) {
+	tb.Helper()
 	diff := math.Abs(float64(got - want))
 	if diff >= floatEqualityThreshold {
-		t.Fatalf(
+		tb.Fatalf(
 			"\nNot NearlyEqual\n---------------\nGot:\t%v\nWanted:\t%v\n\nDifference %v exceeds maximum tolerance of %v\n",
 			got,
 			want,
@@ -54,10 +54,10 @@ func NearlyEqual[T ~float32 | ~float64](t testing.TB, got, want T) {
 // when the items to be compared do not implement the comparable generic constraint
 //
 // The comparator should return true if the two items should be considered equal.
-func EqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
-	t.Helper()
+func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
+	tb.Helper()
 	if !equal(got, want) {
-		t.Fatalf(
+		tb.Fatalf(
 			"\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n\nequal(got, want) returned false\n",
 			got,
 			want,
@@ -69,10 +69,10 @@ func EqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 //
 //	test.NotEqual(t, "apples", "oranges") // Passes
 //	test.NotEqual(t, "apples", "apples") // Fails
-func NotEqual[T comparable](t testing.TB, got, want T) {
-	t.Helper()
+func NotEqual[T comparable](tb testing.TB, got, want T) {
+	tb.Helper()
 	if got == want {
-		t.Fatalf("\nValues were equal:\t%+v\n", got)
+		tb.Fatalf("\nValues were equal:\t%+v\n", got)
 	}
 }
 
@@ -80,10 +80,10 @@ func NotEqual[T comparable](t testing.TB, got, want T) {
 // when the items to be compared do not implement the comparable generic constraint
 //
 // The comparator should return true if the two items should be considered equal.
-func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
-	t.Helper()
+func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
+	tb.Helper()
 	if equal(got, want) {
-		t.Fatalf("\nValues were equal:\t%+v\n\nequal(got, want) returned true\n", got)
+		tb.Fatalf("\nValues were equal:\t%+v\n\nequal(got, want) returned true\n", got)
 	}
 }
 
@@ -91,10 +91,10 @@ func NotEqualFunc[T any](t testing.TB, got, want T, equal func(a, b T) bool) {
 //
 //	err := doSomething()
 //	test.Ok(t, err)
-func Ok(t testing.TB, err error) {
-	t.Helper()
+func Ok(tb testing.TB, err error) {
+	tb.Helper()
 	if err != nil {
-		t.Fatalf("\nNot Ok\n------\nGot error:\t%v\n", err)
+		tb.Fatalf("\nNot Ok\n------\nGot error:\t%v\n", err)
 	}
 }
 
@@ -102,10 +102,10 @@ func Ok(t testing.TB, err error) {
 //
 //	err := shouldReturnErr()
 //	test.Err(t, err)
-func Err(t testing.TB, err error) {
-	t.Helper()
+func Err(tb testing.TB, err error) {
+	tb.Helper()
 	if err == nil {
-		t.Fatalf("\nNot Err\n-------\nError was nil\n")
+		tb.Fatalf("\nNot Err\n-------\nError was nil\n")
 	}
 }
 
@@ -119,10 +119,10 @@ func Err(t testing.TB, err error) {
 //	test.WantErr(t, errors.New("uh oh"), false) // Fails, got error but didn't want one
 //	test.WantErr(t, nil, true) // Fails, wanted an error but didn't get one
 //	test.WantErr(t, nil, false) // Passes, didn't want an error and didn't get one
-func WantErr(t testing.TB, err error, want bool) {
-	t.Helper()
+func WantErr(tb testing.TB, err error, want bool) {
+	tb.Helper()
 	if (err != nil) != want {
-		t.Fatalf("\nWantErr\n-------\nGot error:\t%v\nWanted error:\t%v\n", err, want)
+		tb.Fatalf("\nWantErr\n-------\nGot error:\t%v\nWanted error:\t%v\n", err, want)
 	}
 }
 
@@ -130,10 +130,10 @@ func WantErr(t testing.TB, err error, want bool) {
 //
 //	test.True(t, true) // Passes
 //	test.True(t, false) // Fails
-func True(t testing.TB, v bool) {
-	t.Helper()
+func True(tb testing.TB, v bool) {
+	tb.Helper()
 	if !v {
-		t.Fatalf("\nNot True\n--------\nGot:\t%v\n", v)
+		tb.Fatalf("\nNot True\n--------\nGot:\t%v\n", v)
 	}
 }
 
@@ -141,27 +141,27 @@ func True(t testing.TB, v bool) {
 //
 //	test.False(t, false) // Passes
 //	test.False(t, true) // Fails
-func False(t testing.TB, v bool) {
-	t.Helper()
+func False(tb testing.TB, v bool) {
+	tb.Helper()
 	if v {
-		t.Fatalf("\nNot False\n--------\nGot:\t%v\n", v)
+		tb.Fatalf("\nNot False\n--------\nGot:\t%v\n", v)
 	}
 }
 
 // Diff fails if got != want and provides a rich diff.
-func Diff(t testing.TB, got, want any) {
+func Diff(tb testing.TB, got, want any) {
 	// TODO: Nicer output for diff, don't like the +got -want thing
-	t.Helper()
+	tb.Helper()
 	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("\nMismatch (-want, +got):\n%s\n", diff)
+		tb.Fatalf("\nMismatch (-want, +got):\n%s\n", diff)
 	}
 }
 
 // DeepEqual fails if reflect.DeepEqual(got, want) == false.
-func DeepEqual(t testing.TB, got, want any) {
-	t.Helper()
+func DeepEqual(tb testing.TB, got, want any) {
+	tb.Helper()
 	if !reflect.DeepEqual(got, want) {
-		t.Fatalf(
+		tb.Fatalf(
 			"\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n\nreflect.DeepEqual(got, want) returned false\n",
 			got,
 			want,
@@ -179,11 +179,11 @@ func DeepEqual(t testing.TB, got, want any) {
 // Data makes no guarantee that $CWD/testdata exists, it simply returns it's path.
 //
 //	file := filepath.Join(test.Data(t), "test.txt")
-func Data(t testing.TB) string {
-	t.Helper()
+func Data(tb testing.TB) string {
+	tb.Helper()
 	cwd, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("could not get $CWD: %v", err)
+		tb.Fatalf("could not get $CWD: %v", err)
 	}
 
 	return filepath.Join(cwd, "testdata")
@@ -201,21 +201,21 @@ func Data(t testing.TB) string {
 // \n prior to comparison so this function will behave identically across multiple platforms.
 //
 //	test.File(t, "hello\n", "expected.txt")
-func File(t testing.TB, got, file string) {
-	t.Helper()
+func File(tb testing.TB, got, file string) {
+	tb.Helper()
 	f, err := filepath.Abs(file)
 	if err != nil {
-		t.Fatalf("could not make %s absolute: %v", file, err)
+		tb.Fatalf("could not make %s absolute: %v", file, err)
 	}
 	contents, err := os.ReadFile(f)
 	if err != nil {
-		t.Fatalf("could not read %s: %v", f, err)
+		tb.Fatalf("could not read %s: %v", f, err)
 	}
 
 	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 
 	if diff := udiff.Unified("want", "got", string(contents), got); diff != "" {
-		t.Fatalf("\nMismatch\n--------\n%s\n", diff)
+		tb.Fatalf("\nMismatch\n--------\n%s\n", diff)
 	}
 }
 
@@ -234,8 +234,8 @@ func File(t testing.TB, got, file string) {
 //	stdout, stderr := test.CaptureOutput(t, fn)
 //	fmt.Print(stdout) // "hello stdout\n"
 //	fmt.Print(stderr) // ""
-func CaptureOutput(t testing.TB, fn func() error) (stdout, stderr string) {
-	t.Helper()
+func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
+	tb.Helper()
 
 	// Take copies of the original streams
 	oldStdout := os.Stdout
@@ -249,12 +249,12 @@ func CaptureOutput(t testing.TB, fn func() error) (stdout, stderr string) {
 
 	stdoutReader, stdoutWriter, err := os.Pipe()
 	if err != nil {
-		t.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
+		tb.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
 	}
 
 	stderrReader, stderrWriter, err := os.Pipe()
 	if err != nil {
-		t.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
+		tb.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
 	}
 
 	// Set stdout and stderr streams to the pipe writers
@@ -275,7 +275,7 @@ func CaptureOutput(t testing.TB, fn func() error) (stdout, stderr string) {
 		}()
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
-			t.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
+			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
 		}
 		stdoutCapture <- buf.String()
 	}(&wg)
@@ -287,14 +287,14 @@ func CaptureOutput(t testing.TB, fn func() error) (stdout, stderr string) {
 		}()
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stderrReader); err != nil {
-			t.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
+			tb.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
 		}
 		stderrCapture <- buf.String()
 	}(&wg)
 
 	// Call the test function that produces the output
 	if err := fn(); err != nil {
-		t.Fatalf("CaptureOutput: user function returned an error: %v", err)
+		tb.Fatalf("CaptureOutput: user function returned an error: %v", err)
 	}
 
 	// Close the writers

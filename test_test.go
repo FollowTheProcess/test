@@ -38,6 +38,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "equal string pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Equal(tb, "apples", "apples") // These obviously are equal
 			},
 			wantFail: false, // Should pass
@@ -46,6 +47,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "equal string fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Equal(tb, "apples", "oranges")
 			},
 			wantFail: true,
@@ -54,6 +56,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "equal int pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Equal(tb, 1, 1)
 			},
 			wantFail: false,
@@ -62,6 +65,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "equal int fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Equal(tb, 1, 42)
 			},
 			wantFail: true,
@@ -70,6 +74,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "nearly equal pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.NearlyEqual(tb, 3.0000000001, 3.0)
 			},
 			wantFail: false,
@@ -78,6 +83,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "nearly equal fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.NearlyEqual(tb, 3.0000001, 3.0)
 			},
 			wantFail: true,
@@ -86,6 +92,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "not equal string pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.NotEqual(tb, "apples", "oranges") // Should pass, these aren't equal
 			},
 			wantFail: false,
@@ -94,6 +101,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "not equal string fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.NotEqual(tb, "apples", "apples")
 			},
 			wantFail: true,
@@ -102,6 +110,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "not equal int pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.NotEqual(tb, 1, 42)
 			},
 			wantFail: false,
@@ -110,6 +119,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "not equal int fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.NotEqual(tb, 1, 1)
 			},
 			wantFail: true,
@@ -118,6 +128,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "ok pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Ok(tb, nil)
 			},
 			wantFail: false,
@@ -126,6 +137,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "ok fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Ok(tb, errors.New("uh oh"))
 			},
 			wantFail: true,
@@ -134,6 +146,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "err pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Err(tb, errors.New("uh oh"))
 			},
 			wantFail: false,
@@ -142,6 +155,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "err fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Err(tb, nil)
 			},
 			wantFail: true,
@@ -150,6 +164,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "true pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.True(tb, true)
 			},
 			wantFail: false,
@@ -158,6 +173,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "true fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.True(tb, false)
 			},
 			wantFail: true,
@@ -166,6 +182,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "false pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.False(tb, false)
 			},
 			wantFail: false,
@@ -174,6 +191,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "false fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.False(tb, true)
 			},
 			wantFail: true,
@@ -182,6 +200,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "equal func pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				rubbishEqual := func(a, b string) bool {
 					return true // Always equal
 				}
@@ -193,6 +212,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "equal func fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				rubbishEqual := func(a, b string) bool {
 					return false // Never equal
 				}
@@ -204,6 +224,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "not equal func pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				rubbishNotEqual := func(a, b string) bool {
 					return false // Never equal
 				}
@@ -215,6 +236,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "not equal func fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				rubbishNotEqual := func(a, b string) bool {
 					return true // Always equal
 				}
@@ -226,6 +248,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "deep equal pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				a := []string{"a", "b", "c"}
 				b := []string{"a", "b", "c"}
 
@@ -237,6 +260,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "deep equal fail",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				a := []string{"a", "b", "c"}
 				b := []string{"d", "e", "f"}
 
@@ -248,6 +272,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "want err pass when got and wanted",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.WantErr(tb, errors.New("uh oh"), true) // We wanted an error and got one
 			},
 			wantFail: false,
@@ -256,6 +281,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "want err fail when got and not wanted",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.WantErr(tb, errors.New("uh oh"), false) // Didn't want an error but got one
 			},
 			wantFail: true,
@@ -264,6 +290,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "want err pass when not got and not wanted",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.WantErr(tb, nil, false) // Didn't want an error and didn't get one
 			},
 			wantFail: false,
@@ -272,6 +299,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "want err fail when not got but wanted",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.WantErr(tb, nil, true) // Wanted an error but didn't get one
 			},
 			wantFail: true,
@@ -280,6 +308,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "file pass",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.File(tb, "hello\n", filepath.Join(test.Data(t), "file.txt"))
 			},
 			wantFail: false,
@@ -288,6 +317,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "diff pass string",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Diff(tb, "hello", "hello")
 			},
 			wantFail: false,
@@ -296,6 +326,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "diff fail string",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				test.Diff(tb, "hello", "hello there")
 			},
 			wantFail: true,
@@ -307,6 +338,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "diff pass string slice",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				got := []string{"hello", "there"}
 				want := []string{"hello", "there"}
 				test.Diff(tb, got, want)
@@ -317,6 +349,7 @@ func TestPassFail(t *testing.T) {
 		{
 			name: "diff fail string slice",
 			testFunc: func(tb testing.TB) {
+				tb.Helper()
 				got := []string{"hello", "there"}
 				want := []string{"not", "me"}
 				test.Diff(tb, got, want)

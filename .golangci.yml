@@ -8,7 +8,6 @@ linters:
     - errchkjson
     - errname
     - exhaustive
-    - exportloopref
     - goconst
     - gocritic
     - gocyclo
@@ -31,6 +30,7 @@ linters:
     - tagliatelle
     - tenv
     - testpackage
+    - thelper
     - unconvert
     - unparam
     - unused

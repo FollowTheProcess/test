@@ -4,11 +4,13 @@ package test
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 
@@ -19,6 +21,35 @@ import (
 // floatEqualityThreshold allows us to do near-equality checks for floats.
 const floatEqualityThreshold = 1e-8
 
+// failure represents a test failure, including context and reason.
+type failure[T any] struct {
+	got    T      // What we got
+	want   T      // Expected value
+	title  string // Title of the failure, used as a header
+	reason string // Optional reason for additional context
+}
+
+// String prints a failure.
+func (f failure[T]) String() string {
+	if f.reason != "" {
+		return fmt.Sprintf(
+			"\n%s\n%s\nGot:\t%+v\nWanted:\t%+v\n\n%s\n",
+			f.title,
+			strings.Repeat("-", len(f.title)),
+			f.got,
+			f.want,
+			f.reason,
+		)
+	}
+	return fmt.Sprintf(
+		"\n%s\n%s\nGot:\t%+v\nWanted:\t%+v\n",
+		f.title,
+		strings.Repeat("-", len(f.title)),
+		f.got,
+		f.want,
+	)
+}
+
 // Equal fails if got != want.
 //
 //	test.Equal(t, "apples", "apples") // Passes
@@ -26,7 +57,12 @@ const floatEqualityThreshold = 1e-8
 func Equal[T comparable](tb testing.TB, got, want T) {
 	tb.Helper()
 	if got != want {
-		tb.Fatalf("\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n", got, want)
+		fail := failure[T]{
+			got:   got,
+			want:  want,
+			title: "Not Equal",
+		}
+		tb.Fatal(fail.String())
 	}
 }
 
@@ -40,13 +76,17 @@ func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T) {
 	tb.Helper()
 	diff := math.Abs(float64(got - want))
 	if diff >= floatEqualityThreshold {
-		tb.Fatalf(
-			"\nNot NearlyEqual\n---------------\nGot:\t%v\nWanted:\t%v\n\nDifference %v exceeds maximum tolerance of %v\n",
-			got,
-			want,
-			diff,
-			floatEqualityThreshold,
-		)
+		fail := failure[T]{
+			got:   got,
+			want:  want,
+			title: "Not NearlyEqual",
+			reason: fmt.Sprintf(
+				"Difference %v exceeds maximum tolerance of %v",
+				diff,
+				floatEqualityThreshold,
+			),
+		}
+		tb.Fatal(fail.String())
 	}
 }
 
@@ -57,11 +97,13 @@ func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T) {
 func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
 	tb.Helper()
 	if !equal(got, want) {
-		tb.Fatalf(
-			"\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n\nequal(got, want) returned false\n",
-			got,
-			want,
-		)
+		fail := failure[T]{
+			got:    got,
+			want:   want,
+			title:  "Not Equal",
+			reason: "equal(got, want) returned false",
+		}
+		tb.Fatal(fail.String())
 	}
 }
 
@@ -133,7 +175,12 @@ func WantErr(tb testing.TB, err error, want bool) {
 func True(tb testing.TB, v bool) {
 	tb.Helper()
 	if !v {
-		tb.Fatalf("\nNot True\n--------\nGot:\t%v\n", v)
+		fail := failure[bool]{
+			got:   v,
+			want:  true,
+			title: "Not True",
+		}
+		tb.Fatal(fail.String())
 	}
 }
 
@@ -144,7 +191,12 @@ func True(tb testing.TB, v bool) {
 func False(tb testing.TB, v bool) {
 	tb.Helper()
 	if v {
-		tb.Fatalf("\nNot False\n--------\nGot:\t%v\n", v)
+		fail := failure[bool]{
+			got:   v,
+			want:  false,
+			title: "Not False",
+		}
+		tb.Fatal(fail.String())
 	}
 }
 
@@ -161,11 +213,13 @@ func Diff(tb testing.TB, got, want any) {
 func DeepEqual(tb testing.TB, got, want any) {
 	tb.Helper()
 	if !reflect.DeepEqual(got, want) {
-		tb.Fatalf(
-			"\nNot Equal\n---------\nGot:\t%+v\nWanted:\t%+v\n\nreflect.DeepEqual(got, want) returned false\n",
-			got,
-			want,
-		)
+		fail := failure[any]{
+			got:    got,
+			want:   want,
+			title:  "Not Equal",
+			reason: "reflect.DeepEqual(got, want) returned false",
+		}
+		tb.Fatal(fail.String())
 	}
 }
 

@@ -56,7 +56,7 @@ func TestSomething(t *testing.T) {
 ```
 
 > [!TIP]
-> Line comments on the line you call a `test` function on, will be shown in failure messages as additional context
+> Line comments on the line you call most `test` functions on will be shown in failure messages as additional context
 
 ### Non Comparable Types
 

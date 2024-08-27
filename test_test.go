@@ -23,6 +23,11 @@ type TB struct {
 
 func (t *TB) Helper() {}
 
+func (t *TB) Fatal(args ...any) {
+	t.failed = true
+	fmt.Fprint(t.out, args...)
+}
+
 func (t *TB) Fatalf(format string, args ...any) {
 	t.failed = true
 	fmt.Fprintf(t.out, format, args...)
@@ -177,7 +182,7 @@ func TestPassFail(t *testing.T) {
 				test.True(tb, false)
 			},
 			wantFail: true,
-			wantOut:  "\nNot True\n--------\nGot:\tfalse\n",
+			wantOut:  "\nNot True\n--------\nGot:\tfalse\nWanted:\ttrue\n",
 		},
 		{
 			name: "false pass",
@@ -195,7 +200,7 @@ func TestPassFail(t *testing.T) {
 				test.False(tb, true)
 			},
 			wantFail: true,
-			wantOut:  "\nNot False\n--------\nGot:\ttrue\n",
+			wantOut:  "\nNot False\n---------\nGot:\ttrue\nWanted:\tfalse\n",
 		},
 		{
 			name: "equal func pass",

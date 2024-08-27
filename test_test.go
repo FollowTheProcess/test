@@ -128,7 +128,16 @@ func TestPassFail(t *testing.T) {
 				test.NotEqual(tb, "apples", "apples")
 			},
 			wantFail: true,
-			wantOut:  "\nValues were equal:\tapples\n",
+			wantOut:  "\nEqual\n-----\nGot:\tapples\n\nExpected values to be different\n",
+		},
+		{
+			name: "not equal string fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.NotEqual(tb, "apples", "apples") // different apples
+			},
+			wantFail: true,
+			wantOut:  "\nEqual  // different apples\n-----\nGot:\tapples\n\nExpected values to be different\n",
 		},
 		{
 			name: "not equal int pass",
@@ -146,7 +155,16 @@ func TestPassFail(t *testing.T) {
 				test.NotEqual(tb, 1, 1)
 			},
 			wantFail: true,
-			wantOut:  "\nValues were equal:\t1\n",
+			wantOut:  "\nEqual\n-----\nGot:\t1\n\nExpected values to be different\n",
+		},
+		{
+			name: "not equal int fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.NotEqual(tb, 1, 1) // 1 != 1?
+			},
+			wantFail: true,
+			wantOut:  "\nEqual  // 1 != 1?\n-----\nGot:\t1\n\nExpected values to be different\n",
 		},
 		{
 			name: "ok pass",
@@ -314,7 +332,19 @@ func TestPassFail(t *testing.T) {
 				test.NotEqualFunc(tb, "word", "different word", rubbishNotEqual)
 			},
 			wantFail: true,
-			wantOut:  "\nValues were equal:\tword\n\nequal(got, want) returned true\n",
+			wantOut:  "\nEqual\n-----\nGot:\tword\n\nequal(got, want) returned true\n",
+		},
+		{
+			name: "not equal func fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				rubbishNotEqual := func(a, b string) bool {
+					return true // Always equal
+				}
+				test.NotEqualFunc(tb, "word", "different word", rubbishNotEqual) // Bad equal
+			},
+			wantFail: true,
+			wantOut:  "\nEqual  // Bad equal\n-----\nGot:\tword\n\nequal(got, want) returned true\n",
 		},
 		{
 			name: "deep equal pass",
@@ -365,10 +395,19 @@ func TestPassFail(t *testing.T) {
 			name: "want err fail when got and not wanted",
 			testFunc: func(tb testing.TB) {
 				tb.Helper()
-				test.WantErr(tb, errors.New("uh oh"), false) // Didn't want an error but got one
+				test.WantErr(tb, errors.New("uh oh"), false)
 			},
 			wantFail: true,
-			wantOut:  "\nWantErr\n-------\nGot error:\tuh oh\nWanted error:\tfalse\n",
+			wantOut:  "\nWantErr\n-------\nGot:\tuh oh\nWanted:\t<nil>\n\nGot an unexpected error: uh oh\n",
+		},
+		{
+			name: "want err fail when got and not wanted with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.WantErr(tb, errors.New("uh oh"), false) // comment
+			},
+			wantFail: true,
+			wantOut:  "\nWantErr  // comment\n-------\nGot:\tuh oh\nWanted:\t<nil>\n\nGot an unexpected error: uh oh\n",
 		},
 		{
 			name: "want err pass when not got and not wanted",
@@ -383,10 +422,19 @@ func TestPassFail(t *testing.T) {
 			name: "want err fail when not got but wanted",
 			testFunc: func(tb testing.TB) {
 				tb.Helper()
-				test.WantErr(tb, nil, true) // Wanted an error but didn't get one
+				test.WantErr(tb, nil, true)
 			},
 			wantFail: true,
-			wantOut:  "\nWantErr\n-------\nGot error:\t<nil>\nWanted error:\ttrue\n",
+			wantOut:  "\nWantErr\n-------\nGot:\t<nil>\nWanted:\terror\n\nWanted an error but got <nil>\n",
+		},
+		{
+			name: "want err fail when not got but wanted with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.WantErr(tb, nil, true) // comment
+			},
+			wantFail: true,
+			wantOut:  "\nWantErr  // comment\n-------\nGot:\t<nil>\nWanted:\terror\n\nWanted an error but got <nil>\n",
 		},
 		{
 			name: "file pass",

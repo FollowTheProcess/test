@@ -130,7 +130,16 @@ func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
 func NotEqual[T comparable](tb testing.TB, got, want T) {
 	tb.Helper()
 	if got == want {
-		tb.Fatalf("\nValues were equal:\t%+v\n", got)
+		if comment := getComment(); comment != "" {
+			tb.Fatalf(
+				"\nEqual  // %s\n%s\nGot:\t%+v\n\nExpected values to be different\n",
+				comment,
+				strings.Repeat("-", len("Equal")),
+				got,
+			)
+		} else {
+			tb.Fatalf("\nEqual\n%s\nGot:\t%+v\n\nExpected values to be different\n", strings.Repeat("-", len("Equal")), got)
+		}
 	}
 }
 
@@ -141,7 +150,16 @@ func NotEqual[T comparable](tb testing.TB, got, want T) {
 func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
 	tb.Helper()
 	if equal(got, want) {
-		tb.Fatalf("\nValues were equal:\t%+v\n\nequal(got, want) returned true\n", got)
+		if comment := getComment(); comment != "" {
+			tb.Fatalf(
+				"\nEqual  // %s\n%s\nGot:\t%+v\n\nequal(got, want) returned true\n",
+				comment,
+				strings.Repeat("-", len("Equal")),
+				got,
+			)
+		} else {
+			tb.Fatalf("\nEqual\n%s\nGot:\t%+v\n\nequal(got, want) returned true\n", strings.Repeat("-", len("Equal")), got)
+		}
 	}
 }
 
@@ -192,7 +210,23 @@ func Err(tb testing.TB, err error) {
 func WantErr(tb testing.TB, err error, want bool) {
 	tb.Helper()
 	if (err != nil) != want {
-		tb.Fatalf("\nWantErr\n-------\nGot error:\t%v\nWanted error:\t%v\n", err, want)
+		var reason string
+		var wanted error
+		if want {
+			reason = fmt.Sprintf("Wanted an error but got %v", err)
+			wanted = errors.New("error")
+		} else {
+			reason = fmt.Sprintf("Got an unexpected error: %v", err)
+			wanted = nil
+		}
+		fail := failure[any]{
+			got:     err,
+			want:    wanted,
+			title:   "WantErr",
+			reason:  reason,
+			comment: getComment(),
+		}
+		tb.Fatal(fail.String())
 	}
 }
 

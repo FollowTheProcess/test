@@ -55,6 +55,9 @@ func TestSomething(t *testing.T) {
 }
 ```
 
+> [!TIP]
+> Line comments on the line you call most `test` functions on will be shown in failure messages as additional context
+
 ### Non Comparable Types
 
 `test` uses Go 1.18+ generics under the hood for most of the comparison, which is great, but what if your types don't satisfy `comparable`. We also provide

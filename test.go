@@ -3,13 +3,16 @@
 package test
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -23,31 +26,41 @@ const floatEqualityThreshold = 1e-8
 
 // failure represents a test failure, including context and reason.
 type failure[T any] struct {
-	got    T      // What we got
-	want   T      // Expected value
-	title  string // Title of the failure, used as a header
-	reason string // Optional reason for additional context
+	got     T      // What we got
+	want    T      // Expected value
+	title   string // Title of the failure, used as a header
+	reason  string // Optional reason for additional context
+	comment string // Optional line comment for context
 }
 
 // String prints a failure.
 func (f failure[T]) String() string {
-	if f.reason != "" {
-		return fmt.Sprintf(
-			"\n%s\n%s\nGot:\t%+v\nWanted:\t%+v\n\n%s\n",
+	var msg string
+	if f.comment != "" {
+		msg = fmt.Sprintf(
+			"\n%s  // %s\n%s\nGot:\t%+v\nWanted:\t%+v\n",
+			f.title,
+			f.comment,
+			strings.Repeat("-", len(f.title)),
+			f.got,
+			f.want,
+		)
+	} else {
+		msg = fmt.Sprintf(
+			"\n%s\n%s\nGot:\t%+v\nWanted:\t%+v\n",
 			f.title,
 			strings.Repeat("-", len(f.title)),
 			f.got,
 			f.want,
-			f.reason,
 		)
 	}
-	return fmt.Sprintf(
-		"\n%s\n%s\nGot:\t%+v\nWanted:\t%+v\n",
-		f.title,
-		strings.Repeat("-", len(f.title)),
-		f.got,
-		f.want,
-	)
+
+	if f.reason != "" {
+		// Bolt the reason on the end
+		msg = fmt.Sprintf("%s\n%s\n", msg, f.reason)
+	}
+
+	return msg
 }
 
 // Equal fails if got != want.
@@ -58,9 +71,10 @@ func Equal[T comparable](tb testing.TB, got, want T) {
 	tb.Helper()
 	if got != want {
 		fail := failure[T]{
-			got:   got,
-			want:  want,
-			title: "Not Equal",
+			got:     got,
+			want:    want,
+			title:   "Not Equal",
+			comment: getComment(),
 		}
 		tb.Fatal(fail.String())
 	}
@@ -85,6 +99,7 @@ func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T) {
 				diff,
 				floatEqualityThreshold,
 			),
+			comment: getComment(),
 		}
 		tb.Fatal(fail.String())
 	}
@@ -98,10 +113,11 @@ func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
 	tb.Helper()
 	if !equal(got, want) {
 		fail := failure[T]{
-			got:    got,
-			want:   want,
-			title:  "Not Equal",
-			reason: "equal(got, want) returned false",
+			got:     got,
+			want:    want,
+			title:   "Not Equal",
+			reason:  "equal(got, want) returned false",
+			comment: getComment(),
 		}
 		tb.Fatal(fail.String())
 	}
@@ -136,7 +152,13 @@ func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
 func Ok(tb testing.TB, err error) {
 	tb.Helper()
 	if err != nil {
-		tb.Fatalf("\nNot Ok\n------\nGot error:\t%v\n", err)
+		fail := failure[error]{
+			got:     err,
+			want:    nil,
+			title:   "Not Ok",
+			comment: getComment(),
+		}
+		tb.Fatal(fail.String())
 	}
 }
 
@@ -147,7 +169,13 @@ func Ok(tb testing.TB, err error) {
 func Err(tb testing.TB, err error) {
 	tb.Helper()
 	if err == nil {
-		tb.Fatalf("\nNot Err\n-------\nError was nil\n")
+		fail := failure[error]{
+			got:     nil,
+			want:    errors.New("error"),
+			title:   "Not Err",
+			comment: getComment(),
+		}
+		tb.Fatal(fail.String())
 	}
 }
 
@@ -176,9 +204,10 @@ func True(tb testing.TB, v bool) {
 	tb.Helper()
 	if !v {
 		fail := failure[bool]{
-			got:   v,
-			want:  true,
-			title: "Not True",
+			got:     v,
+			want:    true,
+			title:   "Not True",
+			comment: getComment(),
 		}
 		tb.Fatal(fail.String())
 	}
@@ -192,9 +221,10 @@ func False(tb testing.TB, v bool) {
 	tb.Helper()
 	if v {
 		fail := failure[bool]{
-			got:   v,
-			want:  false,
-			title: "Not False",
+			got:     v,
+			want:    false,
+			title:   "Not False",
+			comment: getComment(),
 		}
 		tb.Fatal(fail.String())
 	}
@@ -214,10 +244,11 @@ func DeepEqual(tb testing.TB, got, want any) {
 	tb.Helper()
 	if !reflect.DeepEqual(got, want) {
 		fail := failure[any]{
-			got:    got,
-			want:   want,
-			title:  "Not Equal",
-			reason: "reflect.DeepEqual(got, want) returned false",
+			got:     got,
+			want:    want,
+			title:   "Not Equal",
+			reason:  "reflect.DeepEqual(got, want) returned false",
+			comment: getComment(),
 		}
 		tb.Fatal(fail.String())
 	}
@@ -361,4 +392,44 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 	wg.Wait()
 
 	return capturedStdout, capturedStderr
+}
+
+// getComment loads a Go line comment from a line where a test function has been called.
+//
+// If any error happens or there is no comment, an empty string is returned so as not
+// to influence the test with an unrelated error.
+func getComment() string {
+	skip := 2 // Skip 2 frames, one for this function, the other for the calling test function
+	_, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		return ""
+	}
+
+	f, err := os.Open(file)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	currentLine := 1 // Line numbers in source files start from 1
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		// Skip through until we get to the line returned from runtime.Caller
+		if currentLine != line {
+			currentLine++
+			continue
+		}
+
+		_, comment, ok := strings.Cut(scanner.Text(), "//")
+		if !ok {
+			// There was no comment on this line
+			return ""
+		}
+
+		// Now comment will be everything from the "//" until the end of the line
+		return strings.TrimSpace(comment)
+	}
+
+	// Didn't find one
+	return ""
 }

@@ -59,6 +59,15 @@ func TestPassFail(t *testing.T) {
 			wantOut:  "\nNot Equal\n---------\nGot:\tapples\nWanted:\toranges\n",
 		},
 		{
+			name: "equal string fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.Equal(tb, "apples", "oranges") // apples are not oranges
+			},
+			wantFail: true,
+			wantOut:  "\nNot Equal  // apples are not oranges\n---------\nGot:\tapples\nWanted:\toranges\n",
+		},
+		{
 			name: "equal int pass",
 			testFunc: func(tb testing.TB) {
 				tb.Helper()
@@ -93,6 +102,15 @@ func TestPassFail(t *testing.T) {
 			},
 			wantFail: true,
 			wantOut:  "\nNot NearlyEqual\n---------------\nGot:\t3.0000001\nWanted:\t3\n\nDifference 9.999999983634211e-08 exceeds maximum tolerance of 1e-08\n",
+		},
+		{
+			name: "nearly equal fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.NearlyEqual(tb, 3.0000001, 3.0) // Ooof so close
+			},
+			wantFail: true,
+			wantOut:  "\nNot NearlyEqual  // Ooof so close\n---------------\nGot:\t3.0000001\nWanted:\t3\n\nDifference 9.999999983634211e-08 exceeds maximum tolerance of 1e-08\n",
 		},
 		{
 			name: "not equal string pass",
@@ -146,7 +164,16 @@ func TestPassFail(t *testing.T) {
 				test.Ok(tb, errors.New("uh oh"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot Ok\n------\nGot error:\tuh oh\n",
+			wantOut:  "\nNot Ok\n------\nGot:\tuh oh\nWanted:\t<nil>\n",
+		},
+		{
+			name: "ok fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.Ok(tb, errors.New("uh oh")) // Calling some function
+			},
+			wantFail: true,
+			wantOut:  "\nNot Ok  // Calling some function\n------\nGot:\tuh oh\nWanted:\t<nil>\n",
 		},
 		{
 			name: "err pass",
@@ -164,7 +191,16 @@ func TestPassFail(t *testing.T) {
 				test.Err(tb, nil)
 			},
 			wantFail: true,
-			wantOut:  "\nNot Err\n-------\nError was nil\n",
+			wantOut:  "\nNot Err\n-------\nGot:\t<nil>\nWanted:\terror\n",
+		},
+		{
+			name: "err fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.Err(tb, nil) // Should have failed
+			},
+			wantFail: true,
+			wantOut:  "\nNot Err  // Should have failed\n-------\nGot:\t<nil>\nWanted:\terror\n",
 		},
 		{
 			name: "true pass",
@@ -185,6 +221,15 @@ func TestPassFail(t *testing.T) {
 			wantOut:  "\nNot True\n--------\nGot:\tfalse\nWanted:\ttrue\n",
 		},
 		{
+			name: "true fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.True(tb, false) // Comment here
+			},
+			wantFail: true,
+			wantOut:  "\nNot True  // Comment here\n--------\nGot:\tfalse\nWanted:\ttrue\n",
+		},
+		{
 			name: "false pass",
 			testFunc: func(tb testing.TB) {
 				tb.Helper()
@@ -201,6 +246,15 @@ func TestPassFail(t *testing.T) {
 			},
 			wantFail: true,
 			wantOut:  "\nNot False\n---------\nGot:\ttrue\nWanted:\tfalse\n",
+		},
+		{
+			name: "false fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				test.False(tb, true) // Should always be false
+			},
+			wantFail: true,
+			wantOut:  "\nNot False  // Should always be false\n---------\nGot:\ttrue\nWanted:\tfalse\n",
 		},
 		{
 			name: "equal func pass",
@@ -225,6 +279,18 @@ func TestPassFail(t *testing.T) {
 			},
 			wantFail: true,
 			wantOut:  "\nNot Equal\n---------\nGot:\tword\nWanted:\tword\n\nequal(got, want) returned false\n",
+		},
+		{
+			name: "equal func fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				rubbishEqual := func(a, b string) bool {
+					return false // Never equal
+				}
+				test.EqualFunc(tb, "word", "word", rubbishEqual) // Uh oh
+			},
+			wantFail: true,
+			wantOut:  "\nNot Equal  // Uh oh\n---------\nGot:\tword\nWanted:\tword\n\nequal(got, want) returned false\n",
 		},
 		{
 			name: "not equal func pass",
@@ -273,6 +339,18 @@ func TestPassFail(t *testing.T) {
 			},
 			wantFail: true,
 			wantOut:  "\nNot Equal\n---------\nGot:\t[a b c]\nWanted:\t[d e f]\n\nreflect.DeepEqual(got, want) returned false\n",
+		},
+		{
+			name: "deep equal fail with comment",
+			testFunc: func(tb testing.TB) {
+				tb.Helper()
+				a := []string{"a", "b", "c"}
+				b := []string{"d", "e", "f"}
+
+				test.DeepEqual(tb, a, b) // Oh no!
+			},
+			wantFail: true,
+			wantOut:  "\nNot Equal  // Oh no!\n---------\nGot:\t[a b c]\nWanted:\t[d e f]\n\nreflect.DeepEqual(got, want) returned false\n",
 		},
 		{
 			name: "want err pass when got and wanted",

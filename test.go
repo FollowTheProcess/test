@@ -17,6 +17,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/FollowTheProcess/test/internal/colour"
 	"github.com/aymanbagabas/go-udiff"
 	"github.com/google/go-cmp/cmp"
 )
@@ -333,8 +334,8 @@ func File(tb testing.TB, got, file string) {
 
 	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 
-	if diff := udiff.Unified("want", "got", string(contents), got); diff != "" {
-		tb.Fatalf("\nMismatch\n--------\n%s\n", diff)
+	if diff := udiff.Unified(f, "got", string(contents), got); diff != "" {
+		tb.Fatalf("\nMismatch\n--------\n%s\n", prettyDiff(diff))
 	}
 }
 
@@ -466,4 +467,27 @@ func getComment() string {
 
 	// Didn't find one
 	return ""
+}
+
+// prettyDiff takes a string diff in unified diff format and colourises it for easier viewing.
+func prettyDiff(diff string) string {
+	// TODO(@FollowTheProcess): I don't like parsing the string directly but
+	// it's the simplest way I think
+	lines := strings.Split(diff, "\n")
+	for i := 0; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(trimmed, "---") || strings.HasPrefix(trimmed, "- ") {
+			lines[i] = colour.Red(lines[i])
+		}
+
+		if strings.HasPrefix(trimmed, "@@") {
+			lines[i] = colour.Header(lines[i])
+		}
+
+		if strings.HasPrefix(trimmed, "+++") || strings.HasPrefix(trimmed, "+ ") {
+			lines[i] = colour.Green(lines[i])
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }

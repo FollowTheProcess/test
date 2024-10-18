@@ -55,8 +55,29 @@ func TestSomething(t *testing.T) {
 }
 ```
 
+### Self Documenting Tests
+
 > [!TIP]
 > Line comments on the line you call most `test` functions on will be shown in failure messages as additional context
+
+That means you can have additional context in the failure message, as well as helpful comments explaining the assertion to readers of your code
+
+```go
+func TestSomething(t *testing.T) {
+    test.Equal(t, "apples", "oranges") // Fruits are not equal
+}
+```
+
+Will get you a failure message like:
+
+```shell
+--- FAIL: TestSomething (0.00s)
+    something_test.go:1: 
+        Not Equal  // Fruits are not equal
+        ---------
+        Got:    apples
+        Wanted: oranges
+```
 
 ### Non Comparable Types
 

@@ -35,6 +35,7 @@ func Test(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not read %s: %v", file, err)
 			}
+			// Stupid windows
 			contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 			archive := txtar.Parse(contents)
 			if len(archive.Files) != 3 || archive.Files[2].Name != "diff" {

@@ -1,8 +1,6 @@
 module github.com/FollowTheProcess/test
 
-go 1.22.0
-
-toolchain go1.23.3
+go 1.23
 
 require github.com/google/go-cmp v0.6.0
 

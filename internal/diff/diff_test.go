@@ -35,7 +35,7 @@ func Test(t *testing.T) {
 				t.Fatal(err)
 			}
 			if len(a.Files) != 3 || a.Files[2].Name != "diff" {
-				t.Fatalf("%s: want three files, third named \"diff\"", file)
+				t.Fatalf("%s: want three files, third named \"diff\", got: %v", file, a.Files)
 			}
 			diffs := diff.Diff(
 				a.Files[0].Name,

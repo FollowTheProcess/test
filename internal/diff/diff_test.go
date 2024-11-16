@@ -6,6 +6,7 @@ package diff_test
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -30,20 +31,22 @@ func Test(t *testing.T) {
 
 	for _, file := range files {
 		t.Run(filepath.Base(file), func(t *testing.T) {
-			a, err := txtar.ParseFile(file)
+			contents, err := os.ReadFile(file)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("could not read %s: %v", file, err)
 			}
-			if len(a.Files) != 3 || a.Files[2].Name != "diff" {
-				t.Fatalf("%s: want three files, third named \"diff\", got: %v", file, a.Files)
+			contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
+			archive := txtar.Parse(contents)
+			if len(archive.Files) != 3 || archive.Files[2].Name != "diff" {
+				t.Fatalf("%s: want three files, third named \"diff\", got: %v", file, archive.Files)
 			}
 			diffs := diff.Diff(
-				a.Files[0].Name,
-				clean(a.Files[0].Data),
-				a.Files[1].Name,
-				clean(a.Files[1].Data),
+				archive.Files[0].Name,
+				clean(archive.Files[0].Data),
+				archive.Files[1].Name,
+				clean(archive.Files[1].Data),
 			)
-			want := clean(a.Files[2].Data)
+			want := clean(archive.Files[2].Data)
 			if !bytes.Equal(diffs, want) {
 				t.Fatalf("%s: have:\n%s\nwant:\n%s\n%s", file,
 					diffs, want, diff.Diff("have", diffs, "want", want))

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/FollowTheProcess/test/internal/colour"
-	"github.com/aymanbagabas/go-udiff"
+	"github.com/FollowTheProcess/test/internal/diff"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -334,8 +334,8 @@ func File(tb testing.TB, got, file string) {
 
 	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
 
-	if diff := udiff.Unified(f, "got", string(contents), got); diff != "" {
-		tb.Fatalf("\nMismatch\n--------\n%s\n", prettyDiff(diff))
+	if diff := diff.Diff(f, contents, "got", []byte(got)); diff != nil {
+		tb.Fatalf("\nMismatch\n--------\n%s\n", prettyDiff(string(diff)))
 	}
 }
 
@@ -471,8 +471,6 @@ func getComment() string {
 
 // prettyDiff takes a string diff in unified diff format and colourises it for easier viewing.
 func prettyDiff(diff string) string {
-	// TODO(@FollowTheProcess): I don't like parsing the string directly but
-	// it's the simplest way I think
 	lines := strings.Split(diff, "\n")
 	for i := 0; i < len(lines); i++ {
 		trimmed := strings.TrimSpace(lines[i])

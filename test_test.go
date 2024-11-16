@@ -578,7 +578,3 @@ func TestCapture(t *testing.T) {
 		test.Equal(t, stderr, "")
 	})
 }
-
-func TestSomething(t *testing.T) {
-	test.Equal(t, "apples", "oranges") // Fruits are not equal
-}

@@ -20,7 +20,7 @@ func clean(text []byte) []byte {
 }
 
 func Test(t *testing.T) {
-	files, err := filepath.Glob("testdata/*.txtar")
+	files, err := filepath.Glob(filepath.Join("testdata", "*.txtar"))
 	if err != nil {
 		t.Fatalf("could not glob txtar files: %v", err)
 	}

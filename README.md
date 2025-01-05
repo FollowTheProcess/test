@@ -11,7 +11,7 @@
 
 ## Project Description
 
-`test` is my take on a handy, lightweight Go test helper package. Inspired by [matryer/is], [carlmjohnson/be] and others.
+`test` is my take on a handy, lightweight Go test helper package. Inspired by [matryer/is], [earthboundkid/be] and others.
 
 It provides a lightweight, but useful, extension to the std lib testing package with a friendlier and hopefully intuitive API. You definitely don't need it,
 but might find it useful anyway 🙂
@@ -245,7 +245,7 @@ func TestFile(t *testing.T) {
 }
 ```
 
-This wil read the file, normalise line endings and then generate an output almost like a git diff:
+This will read the file, normalise line endings and then generate an output almost like a git diff:
 
 ```patch
 --- want
@@ -262,4 +262,4 @@ This package was created with [copier] and the [FollowTheProcess/go_copier] proj
 [copier]: https://copier.readthedocs.io/en/stable/
 [FollowTheProcess/go_copier]: https://github.com/FollowTheProcess/go_copier
 [matryer/is]: https://github.com/matryer/is
-[carlmjohnson/be]: https://github.com/carlmjohnson/be
+[earthboundkid/be]: https://github.com/earthboundkid/be

@@ -42,46 +42,38 @@ func TestSomething(t *testing.T) {
 
     test.True(t, true) // Passes
     test.False(t, true) // Fails
-
-    // Get $CWD/testdata easily
-    test.Data(t) // /Users/you/project/package/testdata
-
-    // Check against contents of a file including line ending normalisation
-    file := filepath.Join(test.Data(t), "expected.txt")
-    test.File(t, "hello\n", file)
-
-    // Just like the good old reflect.DeepEqual, but with a nicer format
-    test.DeepEqual(t, []string{"hello"}, []string{"world"}) // Fails
 }
 ```
 
-### Self Documenting Tests
+### Add Additional Context
 
-> [!TIP]
-> Line comments on the line you call most `test` functions on will be shown in failure messages as additional context
-
-That means you can have additional context in the failure message, as well as helpful comments explaining the assertion to readers of your code
+`test` provides a number of options to decorate your test log with useful context:
 
 ```go
-func TestSomething(t *testing.T) {
-    test.Equal(t, "apples", "oranges") // Fruits are not equal
+func TestDetail(t *testing.T) {
+    test.Equal(t, "apples", "oranges", test.Title("Fruit scramble!"), test.Context("Apples are not oranges!"))
 }
 ```
 
-Will get you a failure message like:
+Will get you an error log in the test that looks like this...
 
-```shell
---- FAIL: TestSomething (0.00s)
-    something_test.go:1: 
-        Not Equal  // Fruits are not equal
-        ---------
+```plaintext
+--- FAIL: TestDemo (0.00s)
+    test_test.go:501: 
+        Fruit scramble!
+        ---------------
+        
         Got:    apples
         Wanted: oranges
+        
+        (Apples are not oranges!)
+        
+FAIL
 ```
 
 ### Non Comparable Types
 
-`test` uses Go 1.18+ generics under the hood for most of the comparison, which is great, but what if your types don't satisfy `comparable`. We also provide
+`test` uses generics under the hood for most of the comparison, which is great, but what if your types don't satisfy `comparable`. We also provide
 `test.EqualFunc` and `test.NotEqualFunc` for those exact situations!
 
 These allow you to pass in a custom comparator function for your type, if your comparator function returns true, the types are considered equal.
@@ -98,41 +90,14 @@ func TestNonComparableTypes(t *testing.T) {
 
     test.EqualFunc(t, a, b, sliceEqual) // Passes
 
-    // Can also use e.g. the new slices package
-    test.EqualFunc(t, a, b, slices.Equal[string]) // Also passes :)
+    // Can also use any function here
+    test.EqualFunc(t, a, b, slices.Equal) // Also passes :)
 
-    test.EqualFunc(t, a, c, slices.Equal[string]) // Fails
+    test.EqualFunc(t, a, c, slices.Equal) // Fails
 }
 ```
 
 You can also use this same pattern for custom user defined types, structs etc.
-
-### Rich Comparison
-
-Large structs or long slices can often be difficult to compare using `reflect.DeepEqual`, you have to scan for the difference yourself. `test` provides a
-`test.Diff` function that produces a rich text diff for you on failure:
-
-```go
-func TestDiff(t *testing.T) {
-    // Pretend these are very long, or are large structs
-    a := []string{"hello", "world"}
-    b := []string{"hello", "there"}
-
-    test.Diff(t, a, b)
-}
-```
-
-Will give you:
-
-```plain
---- FAIL: TestDiff (0.00s)
-    main_test.go:14: Mismatch (-want, +got):
-          []string{
-                "hello",
-        -       "there",
-        +       "world",
-          }
-```
 
 ### Table Driven Tests
 
@@ -231,29 +196,6 @@ func TestOutput(t *testing.T) {
 ```
 
 Under the hood `CaptureOutput` temporarily captures both streams, copies the data to a buffer and returns the output back to you, before cleaning everything back up again.
-
-### Golden Files
-
-`test` has great support for golden files:
-
-```go
-func TestFile(t *testing.T) {
-    got := "some contents\n"
-    want := filepath.Join(test.Data(t), "golden.txt")
-
-    test.File(t, got, want)
-}
-```
-
-This will read the file, normalise line endings and then generate an output almost like a git diff:
-
-```patch
---- want
-+++ got
-@@ -1 +1 @@
--some file contents
-+some contents
-```
 
 ### Credits
 

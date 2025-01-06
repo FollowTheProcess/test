@@ -1,0 +1,10 @@
+
+Equal
+-----
+
+Got:	[hello]
+Wanted:	[hello]
+
+(who's bad at testing... you)
+
+Because: equal(got, want) returned true

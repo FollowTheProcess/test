@@ -1,0 +1,8 @@
+
+Hello!
+------
+
+Got:	[hello]
+Wanted:	[there]
+
+Because: equal(got, want) returned false

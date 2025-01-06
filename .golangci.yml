@@ -36,6 +36,13 @@ linters:
     - unused
     - whitespace
 
+issues:
+  exclude-rules:
+    - path: test_test.go
+      linters:
+        - thelper # The entire package is effectively a t.Helper
+        - goconst # Lots of repetition in here
+
 linters-settings:
   errcheck:
     check-type-assertions: true

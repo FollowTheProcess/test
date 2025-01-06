@@ -1,0 +1,10 @@
+
+WantErr
+-------
+
+Got:	bang
+Wanted:	<nil>
+
+(Errors are bad!)
+
+Because: Got an unexpected error: bang

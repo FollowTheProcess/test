@@ -1,0 +1,6 @@
+
+My fruit test
+-------------
+
+Got:	apples
+Wanted:	oranges

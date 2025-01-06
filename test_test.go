@@ -3,15 +3,18 @@ package test_test
 import (
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+	"slices"
 	"testing"
 
+	"github.com/FollowTheProcess/snapshot"
 	"github.com/FollowTheProcess/test"
-	"github.com/google/go-cmp/cmp"
 )
+
+var update = flag.Bool("update", false, "Update snapshots")
 
 // TB is a fake implementation of [testing.TB] that simply records in internal
 // state whether or not it would have failed and what it would have written.
@@ -33,463 +36,397 @@ func (t *TB) Fatalf(format string, args ...any) {
 	fmt.Fprintf(t.out, format, args...)
 }
 
-func TestPassFail(t *testing.T) {
+func TestTest(t *testing.T) {
 	tests := []struct {
-		testFunc func(tb testing.TB) // The test function we're... testing
-		wantOut  string              // What we wanted the TB to print
+		fn       func(tb testing.TB) // The test function we're... testing?
 		name     string              // Name of the test case
-		wantFail bool                // Whether we wanted the testFunc to fail it's TB
+		wantFail bool                // Whether it should fail
 	}{
 		{
-			name: "equal string pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Equal(tb, "apples", "apples") // These obviously are equal
+			name: "Equal/pass",
+			fn: func(tb testing.TB) {
+				test.Equal(tb, "apples", "apples")
 			},
-			wantFail: false, // Should pass
-			wantOut:  "",    // And write no output
+			wantFail: false,
 		},
 		{
-			name: "equal string fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "Equal/fail",
+			fn: func(tb testing.TB) {
 				test.Equal(tb, "apples", "oranges")
 			},
 			wantFail: true,
-			wantOut:  "\nNot Equal\n---------\nGot:\tapples\nWanted:\toranges\n",
 		},
 		{
-			name: "equal string fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Equal(tb, "apples", "oranges") // apples are not oranges
+			name: "Equal/fail with context",
+			fn: func(tb testing.TB) {
+				test.Equal(tb, "apples", "oranges", test.Context("Apples are not oranges!"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot Equal  // apples are not oranges\n---------\nGot:\tapples\nWanted:\toranges\n",
 		},
 		{
-			name: "equal int pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Equal(tb, 1, 1)
+			name: "Equal/fail context format",
+			fn: func(tb testing.TB) {
+				test.Equal(tb, "apples", "oranges", test.Context("Apples == Oranges: %v", false))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Equal/fail with title",
+			fn: func(tb testing.TB) {
+				test.Equal(tb, "apples", "oranges", test.Title("My fruit test"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotEqual/pass",
+			fn: func(tb testing.TB) {
+				test.NotEqual(tb, "apples", "oranges")
 			},
 			wantFail: false,
-			wantOut:  "",
 		},
 		{
-			name: "equal int fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Equal(tb, 1, 42)
-			},
-			wantFail: true,
-			wantOut:  "\nNot Equal\n---------\nGot:\t1\nWanted:\t42\n",
-		},
-		{
-			name: "nearly equal pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NearlyEqual(tb, 3.0000000001, 3.0)
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "nearly equal fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NearlyEqual(tb, 3.0000001, 3.0)
-			},
-			wantFail: true,
-			wantOut:  "\nNot NearlyEqual\n---------------\nGot:\t3.0000001\nWanted:\t3\n\nDifference 9.999999983634211e-08 exceeds maximum tolerance of 1e-08\n",
-		},
-		{
-			name: "nearly equal fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NearlyEqual(tb, 3.0000001, 3.0) // Ooof so close
-			},
-			wantFail: true,
-			wantOut:  "\nNot NearlyEqual  // Ooof so close\n---------------\nGot:\t3.0000001\nWanted:\t3\n\nDifference 9.999999983634211e-08 exceeds maximum tolerance of 1e-08\n",
-		},
-		{
-			name: "not equal string pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NotEqual(tb, "apples", "oranges") // Should pass, these aren't equal
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "not equal string fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "NotEqual/fail",
+			fn: func(tb testing.TB) {
 				test.NotEqual(tb, "apples", "apples")
 			},
 			wantFail: true,
-			wantOut:  "\nEqual\n-----\nGot:\tapples\n\nExpected values to be different\n",
 		},
 		{
-			name: "not equal string fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NotEqual(tb, "apples", "apples") // different apples
+			name: "NotEqual/fail with context",
+			fn: func(tb testing.TB) {
+				test.NotEqual(tb, 42, 42, test.Context("42 is the meaning of life"))
 			},
 			wantFail: true,
-			wantOut:  "\nEqual  // different apples\n-----\nGot:\tapples\n\nExpected values to be different\n",
 		},
 		{
-			name: "not equal int pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NotEqual(tb, 1, 42)
+			name: "NotEqual/fail context format",
+			fn: func(tb testing.TB) {
+				test.NotEqual(tb, 42, 42, test.Context("42 == meaning of life: %v", true))
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotEqual/fail with title",
+			fn: func(tb testing.TB) {
+				test.NotEqual(tb, "apples", "apples", test.Title("My fruit test"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "EqualFunc/pass",
+			fn: func(tb testing.TB) {
+				test.EqualFunc(tb, []int{1, 2, 3, 4}, []int{1, 2, 3, 4}, slices.Equal)
 			},
 			wantFail: false,
-			wantOut:  "",
 		},
 		{
-			name: "not equal int fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NotEqual(tb, 1, 1)
+			name: "EqualFunc/fail",
+			fn: func(tb testing.TB) {
+				cmp := func(a, b []string) bool { return false } // Cheating
+				test.EqualFunc(tb, []string{"hello"}, []string{"there"}, cmp)
 			},
 			wantFail: true,
-			wantOut:  "\nEqual\n-----\nGot:\t1\n\nExpected values to be different\n",
 		},
 		{
-			name: "not equal int fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.NotEqual(tb, 1, 1) // 1 != 1?
+			name: "EqualFunc/fail with context",
+			fn: func(tb testing.TB) {
+				test.EqualFunc(
+					tb,
+					[]string{"hello"},
+					[]string{"there"},
+					slices.Equal,
+					test.Context("some context here"),
+				)
 			},
 			wantFail: true,
-			wantOut:  "\nEqual  // 1 != 1?\n-----\nGot:\t1\n\nExpected values to be different\n",
 		},
 		{
-			name: "ok pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "EqualFunc/fail context format",
+			fn: func(tb testing.TB) {
+				test.EqualFunc(
+					tb,
+					[]string{"hello"},
+					[]string{"there"},
+					slices.Equal,
+					test.Context("who's bad at testing... %s", "you"),
+				)
+			},
+			wantFail: true,
+		},
+		{
+			name: "EqualFunc/fail with title",
+			fn: func(tb testing.TB) {
+				test.EqualFunc(tb, []string{"hello"}, []string{"there"}, slices.Equal, test.Title("Hello!"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotEqualFunc/pass",
+			fn: func(tb testing.TB) {
+				test.NotEqualFunc(tb, []int{1, 2, 3, 4}, []int{5, 6, 7, 8}, slices.Equal)
+			},
+			wantFail: false,
+		},
+		{
+			name: "NotEqualFunc/fail",
+			fn: func(tb testing.TB) {
+				cmp := func(a, b []string) bool { return true } // Cheating
+				test.NotEqualFunc(tb, []string{"hello"}, []string{"there"}, cmp)
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotEqualFunc/fail with context",
+			fn: func(tb testing.TB) {
+				test.NotEqualFunc(
+					tb,
+					[]string{"hello"},
+					[]string{"hello"},
+					slices.Equal,
+					test.Context("some context here"),
+				)
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotEqualFunc/fail context format",
+			fn: func(tb testing.TB) {
+				test.NotEqualFunc(
+					tb,
+					[]string{"hello"},
+					[]string{"hello"},
+					slices.Equal,
+					test.Context("who's bad at testing... %s", "you"),
+				)
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotEqualFunc/fail with title",
+			fn: func(tb testing.TB) {
+				test.NotEqualFunc(tb, []string{"hello"}, []string{"hello"}, slices.Equal, test.Title("Hello!"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "NearlyEqual/pass",
+			fn: func(tb testing.TB) {
+				test.NearlyEqual(tb, 3.0000000001, 3.0)
+			},
+			wantFail: false,
+		},
+		{
+			name: "NearlyEqual/fail",
+			fn: func(tb testing.TB) {
+				test.NearlyEqual(tb, 3.0000001, 3.0)
+			},
+			wantFail: true,
+		},
+		{
+			name: "NearlyEqual/fail custom tolerance",
+			fn: func(tb testing.TB) {
+				test.NearlyEqual(tb, 3.2, 3.0, test.FloatEqualityThreshold(0.1))
+			},
+			wantFail: true,
+		},
+		{
+			name: "NearlyEqual/fail with context",
+			fn: func(tb testing.TB) {
+				test.NearlyEqual(tb, 3.0000001, 3.0, test.Context("Numbers don't work that way"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Ok/pass",
+			fn: func(tb testing.TB) {
 				test.Ok(tb, nil)
 			},
 			wantFail: false,
-			wantOut:  "",
 		},
 		{
-			name: "ok fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "Ok/fail",
+			fn: func(tb testing.TB) {
 				test.Ok(tb, errors.New("uh oh"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot Ok\n------\nGot:\tuh oh\nWanted:\t<nil>\n",
 		},
 		{
-			name: "ok fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Ok(tb, errors.New("uh oh")) // Calling some function
+			name: "Ok/fail with context",
+			fn: func(tb testing.TB) {
+				test.Ok(tb, errors.New("uh oh"), test.Context("Could not frobnicate the baz"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot Ok  // Calling some function\n------\nGot:\tuh oh\nWanted:\t<nil>\n",
 		},
 		{
-			name: "err pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Err(tb, errors.New("uh oh"))
+			name: "Ok/fail with title",
+			fn: func(tb testing.TB) {
+				test.Ok(tb, errors.New("uh oh"), test.Title("Bang!"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Err/pass",
+			fn: func(tb testing.TB) {
+				test.Err(tb, errors.New("bang!"))
 			},
 			wantFail: false,
-			wantOut:  "",
 		},
 		{
-			name: "err fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "Err/fail",
+			fn: func(tb testing.TB) {
 				test.Err(tb, nil)
 			},
 			wantFail: true,
-			wantOut:  "\nNot Err\n-------\nGot:\t<nil>\nWanted:\terror\n",
 		},
 		{
-			name: "err fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Err(tb, nil) // Should have failed
+			name: "Err/fail with context",
+			fn: func(tb testing.TB) {
+				test.Err(tb, nil, test.Context("Frobnicated the baz when it should have failed"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot Err  // Should have failed\n-------\nGot:\t<nil>\nWanted:\terror\n",
 		},
 		{
-			name: "true pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "Err/fail with title",
+			fn: func(tb testing.TB) {
+				test.Err(tb, nil, test.Title("Everything is fine?"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "WantErr/pass error",
+			fn: func(tb testing.TB) {
+				test.WantErr(tb, errors.New("bang"), true) // Wanted an error and got one - should pass
+			},
+			wantFail: false,
+		},
+		{
+			name: "WantErr/pass nil",
+			fn: func(tb testing.TB) {
+				test.WantErr(tb, nil, false) // Didn't want an error and got nil - should pass
+			},
+			wantFail: false,
+		},
+		{
+			name: "WantErr/fail error",
+			fn: func(tb testing.TB) {
+				test.WantErr(tb, errors.New("bang"), false) // Got an error but didn't want one - should fail
+			},
+			wantFail: true,
+		},
+		{
+			name: "WantErr/fail nil",
+			fn: func(tb testing.TB) {
+				test.WantErr(tb, nil, true) // Didn't get an error but wanted one - should fail
+			},
+			wantFail: true,
+		},
+		{
+			name: "WantErr/fail with context",
+			fn: func(tb testing.TB) {
+				test.WantErr(tb, errors.New("bang"), false, test.Context("Errors are bad!"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "WantErr/fail with title",
+			fn: func(tb testing.TB) {
+				test.WantErr(tb, errors.New("bang"), false, test.Title("A very bad test"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "True/pass",
+			fn: func(tb testing.TB) {
 				test.True(tb, true)
 			},
 			wantFail: false,
-			wantOut:  "",
 		},
 		{
-			name: "true fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "True/fail",
+			fn: func(tb testing.TB) {
 				test.True(tb, false)
 			},
 			wantFail: true,
-			wantOut:  "\nNot True\n--------\nGot:\tfalse\nWanted:\ttrue\n",
 		},
 		{
-			name: "true fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.True(tb, false) // Comment here
+			name: "True/fail with context",
+			fn: func(tb testing.TB) {
+				test.True(tb, false, test.Context("must always be true"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot True  // Comment here\n--------\nGot:\tfalse\nWanted:\ttrue\n",
 		},
 		{
-			name: "false pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "True/fail with title",
+			fn: func(tb testing.TB) {
+				test.True(tb, false, test.Title("Argh!"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "False/pass",
+			fn: func(tb testing.TB) {
 				test.False(tb, false)
 			},
 			wantFail: false,
-			wantOut:  "",
 		},
 		{
-			name: "false fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
+			name: "False/fail",
+			fn: func(tb testing.TB) {
 				test.False(tb, true)
 			},
 			wantFail: true,
-			wantOut:  "\nNot False\n---------\nGot:\ttrue\nWanted:\tfalse\n",
 		},
 		{
-			name: "false fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.False(tb, true) // Should always be false
+			name: "False/fail with context",
+			fn: func(tb testing.TB) {
+				test.False(tb, true, test.Context("must always be false"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot False  // Should always be false\n---------\nGot:\ttrue\nWanted:\tfalse\n",
 		},
 		{
-			name: "equal func pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				rubbishEqual := func(a, b string) bool {
-					return true // Always equal
-				}
-				test.EqualFunc(tb, "word", "different word", rubbishEqual)
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "equal func fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				rubbishEqual := func(a, b string) bool {
-					return false // Never equal
-				}
-				test.EqualFunc(tb, "word", "word", rubbishEqual)
+			name: "False/fail with title",
+			fn: func(tb testing.TB) {
+				test.False(tb, true, test.Title("Argh!"))
 			},
 			wantFail: true,
-			wantOut:  "\nNot Equal\n---------\nGot:\tword\nWanted:\tword\n\nequal(got, want) returned false\n",
 		},
 		{
-			name: "equal func fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				rubbishEqual := func(a, b string) bool {
-					return false // Never equal
-				}
-				test.EqualFunc(tb, "word", "word", rubbishEqual) // Uh oh
-			},
-			wantFail: true,
-			wantOut:  "\nNot Equal  // Uh oh\n---------\nGot:\tword\nWanted:\tword\n\nequal(got, want) returned false\n",
-		},
-		{
-			name: "not equal func pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				rubbishNotEqual := func(a, b string) bool {
-					return false // Never equal
-				}
-				test.NotEqualFunc(tb, "word", "word", rubbishNotEqual)
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "not equal func fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				rubbishNotEqual := func(a, b string) bool {
-					return true // Always equal
-				}
-				test.NotEqualFunc(tb, "word", "different word", rubbishNotEqual)
-			},
-			wantFail: true,
-			wantOut:  "\nEqual\n-----\nGot:\tword\n\nequal(got, want) returned true\n",
-		},
-		{
-			name: "not equal func fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				rubbishNotEqual := func(a, b string) bool {
-					return true // Always equal
-				}
-				test.NotEqualFunc(tb, "word", "different word", rubbishNotEqual) // Bad equal
-			},
-			wantFail: true,
-			wantOut:  "\nEqual  // Bad equal\n-----\nGot:\tword\n\nequal(got, want) returned true\n",
-		},
-		{
-			name: "deep equal pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				a := []string{"a", "b", "c"}
-				b := []string{"a", "b", "c"}
+			name: "Diff/pass",
+			fn: func(tb testing.TB) {
+				got := "Some\nstuff here in this file\nlines as well wow\nsome more stuff\n"
+				want := "Some\nstuff here in this file\nlines as well wow\nsome more stuff\n"
 
-				test.DeepEqual(tb, a, b)
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "deep equal fail",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				a := []string{"a", "b", "c"}
-				b := []string{"d", "e", "f"}
-
-				test.DeepEqual(tb, a, b)
-			},
-			wantFail: true,
-			wantOut:  "\nNot Equal\n---------\nGot:\t[a b c]\nWanted:\t[d e f]\n\nreflect.DeepEqual(got, want) returned false\n",
-		},
-		{
-			name: "deep equal fail with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				a := []string{"a", "b", "c"}
-				b := []string{"d", "e", "f"}
-
-				test.DeepEqual(tb, a, b) // Oh no!
-			},
-			wantFail: true,
-			wantOut:  "\nNot Equal  // Oh no!\n---------\nGot:\t[a b c]\nWanted:\t[d e f]\n\nreflect.DeepEqual(got, want) returned false\n",
-		},
-		{
-			name: "want err pass when got and wanted",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.WantErr(tb, errors.New("uh oh"), true) // We wanted an error and got one
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "want err fail when got and not wanted",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.WantErr(tb, errors.New("uh oh"), false)
-			},
-			wantFail: true,
-			wantOut:  "\nWantErr\n-------\nGot:\tuh oh\nWanted:\t<nil>\n\nGot an unexpected error: uh oh\n",
-		},
-		{
-			name: "want err fail when got and not wanted with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.WantErr(tb, errors.New("uh oh"), false) // comment
-			},
-			wantFail: true,
-			wantOut:  "\nWantErr  // comment\n-------\nGot:\tuh oh\nWanted:\t<nil>\n\nGot an unexpected error: uh oh\n",
-		},
-		{
-			name: "want err pass when not got and not wanted",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.WantErr(tb, nil, false) // Didn't want an error and didn't get one
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "want err fail when not got but wanted",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.WantErr(tb, nil, true)
-			},
-			wantFail: true,
-			wantOut:  "\nWantErr\n-------\nGot:\t<nil>\nWanted:\terror\n\nWanted an error but got <nil>\n",
-		},
-		{
-			name: "want err fail when not got but wanted with comment",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.WantErr(tb, nil, true) // comment
-			},
-			wantFail: true,
-			wantOut:  "\nWantErr  // comment\n-------\nGot:\t<nil>\nWanted:\terror\n\nWanted an error but got <nil>\n",
-		},
-		{
-			name: "file pass",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.File(tb, "hello\n", filepath.Join(test.Data(t), "file.txt"))
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "diff pass string",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Diff(tb, "hello", "hello")
-			},
-			wantFail: false,
-			wantOut:  "",
-		},
-		{
-			name: "diff fail string",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				test.Diff(tb, "hello", "hello there")
-			},
-			wantFail: true,
-			wantOut: fmt.Sprintf(
-				"\nMismatch (-want, +got):\n%s\n",
-				cmp.Diff("hello there", "hello"),
-			), // Output equivalent to diff
-		},
-		{
-			name: "diff pass string slice",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				got := []string{"hello", "there"}
-				want := []string{"hello", "there"}
 				test.Diff(tb, got, want)
 			},
 			wantFail: false,
-			wantOut:  "",
 		},
 		{
-			name: "diff fail string slice",
-			testFunc: func(tb testing.TB) {
-				tb.Helper()
-				got := []string{"hello", "there"}
-				want := []string{"not", "me"}
+			name: "Diff/fail",
+			fn: func(tb testing.TB) {
+				got := "Some\nstuff here in this file\nlines as well wow\nsome more stuff\n"
+				want := "Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff\n"
 				test.Diff(tb, got, want)
 			},
 			wantFail: true,
-			wantOut: fmt.Sprintf(
-				"\nMismatch (-want, +got):\n%s\n",
-				cmp.Diff([]string{"not", "me"}, []string{"hello", "there"}),
-			), // Output equivalent to diff
+		},
+		{
+			name: "DiffBytes/pass",
+			fn: func(tb testing.TB) {
+				got := []byte("Some\nstuff here in this file\nlines as well wow\nsome more stuff\n")
+				want := []byte("Some\nstuff here in this file\nlines as well wow\nsome more stuff\n")
+
+				test.DiffBytes(tb, got, want)
+			},
+			wantFail: false,
+		},
+		{
+			name: "DiffBytes/fail",
+			fn: func(tb testing.TB) {
+				got := []byte("Some\nstuff here in this file\nlines as well wow\nsome more stuff\n")
+				want := []byte("Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff\n")
+				test.DiffBytes(tb, got, want)
+			},
+			wantFail: true,
 		},
 	}
 
@@ -497,49 +434,30 @@ func TestPassFail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			tb := &TB{out: buf}
+			snap := snapshot.New(t, snapshot.Update(*update))
 
 			if tb.failed {
 				t.Fatalf("%s initial failed state should be false", tt.name)
 			}
 
-			// Call the test function, passing in our mock TB that simply
-			// records whether or not it would have failed and what it would
-			// have written
-			tt.testFunc(tb)
+			// Call the test function, passing in the mock TB that just records
+			// what a "real" TB would have done
+			tt.fn(tb)
 
 			if tb.failed != tt.wantFail {
-				t.Fatalf(
-					"\n%s failure mismatch\n--------------\nfailed:\t%v\nwanted failure:\t%v\n",
-					tt.name,
-					tb.failed,
-					tt.wantFail,
-				)
+				t.Fatalf("\nIncorrect Failure\n\ntb.failed:\t%v\nwanted:\t%v\n", tb.failed, tt.wantFail)
 			}
 
-			if got := buf.String(); got != tt.wantOut {
-				t.Errorf(
-					"\n%s output mismatch\n---------------\nGot:\t%s\nWanted:\t%s\n",
-					tt.name,
-					got,
-					tt.wantOut,
-				)
+			// Test the output matches our snapshot file, only for failed tests
+			// as there should be no output for passed tests
+			if !tb.failed {
+				if buf.Len() != 0 {
+					t.Fatalf("\nIncorrect Output\n\nA passed test should have no output, got: %s\n", buf.String())
+				}
+			} else {
+				snap.Snap(buf.String())
 			}
 		})
-	}
-}
-
-func TestData(t *testing.T) {
-	got := test.Data(t)
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Test for Data could not get cwd: %v", err)
-	}
-
-	want := filepath.Join(cwd, "testdata")
-
-	if got != want {
-		t.Errorf("\nGot:\t%s\nWanted:\t%s\n", got, want)
 	}
 }
 

@@ -1,0 +1,6 @@
+
+Everything is fine?
+-------------------
+
+Got:	<nil>
+Wanted:	error

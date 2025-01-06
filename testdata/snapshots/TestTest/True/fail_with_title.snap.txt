@@ -1,0 +1,6 @@
+
+Argh!
+-----
+
+Got:	false
+Wanted:	true

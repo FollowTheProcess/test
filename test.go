@@ -1,166 +1,176 @@
-// Package test provides a lightweight, but useful extension to the std lib's testing package
-// with a friendlier and more intuitive API.
+// Package test provides a lightweight, but useful extension to the std lib's testing package with
+// a friendlier and more intuitive API.
+//
+// Simple tests become trivial and test provides mechanisms for adding useful context to test failures.
 package test
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 	"os"
-	"path/filepath"
-	"reflect"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/FollowTheProcess/test/internal/colour"
 	"github.com/FollowTheProcess/test/internal/diff"
-	"github.com/google/go-cmp/cmp"
 )
-
-// floatEqualityThreshold allows us to do near-equality checks for floats.
-const floatEqualityThreshold = 1e-8
-
-// failure represents a test failure, including context and reason.
-type failure[T any] struct {
-	got     T      // What we got
-	want    T      // Expected value
-	title   string // Title of the failure, used as a header
-	reason  string // Optional reason for additional context
-	comment string // Optional line comment for context
-}
-
-// String prints a failure.
-func (f failure[T]) String() string {
-	var msg string
-	if f.comment != "" {
-		msg = fmt.Sprintf(
-			"\n%s  // %s\n%s\nGot:\t%+v\nWanted:\t%+v\n",
-			f.title,
-			f.comment,
-			strings.Repeat("-", len(f.title)),
-			f.got,
-			f.want,
-		)
-	} else {
-		msg = fmt.Sprintf(
-			"\n%s\n%s\nGot:\t%+v\nWanted:\t%+v\n",
-			f.title,
-			strings.Repeat("-", len(f.title)),
-			f.got,
-			f.want,
-		)
-	}
-
-	if f.reason != "" {
-		// Bolt the reason on the end
-		msg = fmt.Sprintf("%s\n%s\n", msg, f.reason)
-	}
-
-	return msg
-}
 
 // Equal fails if got != want.
 //
 //	test.Equal(t, "apples", "apples") // Passes
 //	test.Equal(t, "apples", "oranges") // Fails
-func Equal[T comparable](tb testing.TB, got, want T) {
+func Equal[T comparable](tb testing.TB, got, want T, options ...Option) {
 	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "Not Equal"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("Equal: could not apply options: %v", err)
+			return
+		}
+	}
+
 	if got != want {
 		fail := failure[T]{
-			got:     got,
-			want:    want,
-			title:   "Not Equal",
-			comment: getComment(),
+			got:  got,
+			want: want,
+			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
 	}
 }
 
-// NearlyEqual is like Equal but for floating point numbers where typically equality often fails.
+// NotEqual is the opposite of [Equal], it fails if got == want.
 //
-// If the difference between got and want is sufficiently small, they are considered equal.
+//	test.NotEqual(t, 10, 42) // Passes
+//	test.NotEqual(t, 42, 42) // Fails
+func NotEqual[T comparable](tb testing.TB, got, want T, options ...Option) {
+	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "Equal"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("NotEqual: could not apply options: %v", err)
+			return
+		}
+	}
+
+	if got == want {
+		fail := failure[T]{
+			got:  got,
+			want: want,
+			cfg:  cfg,
+		}
+		tb.Fatal(fail.String())
+	}
+}
+
+// EqualFunc is like [Equal] but accepts a custom comparator function, useful
+// when the items to be compared do not implement the comparable generic constraint.
+//
+// The signature of the comparator is such that standard library functions such as
+// [slices.Equal] or [maps.Equal] can be used.
+//
+// The comparator should return true if the two items should be considered equal.
+//
+//	test.EqualFunc(t, []int{1, 2, 3}, []int{1, 2, 3}, slices.Equal) // Passes
+//	test.EqualFunc(t, []int{1, 2, 3}, []int{4, 5, 6}, slices.Equal) // Fails
+func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, options ...Option) {
+	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "Not Equal"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("EqualFunc: could not apply options: %v", err)
+			return
+		}
+	}
+
+	if !equal(got, want) {
+		cfg.reason = "equal(got, want) returned false"
+		fail := failure[T]{
+			got:  got,
+			want: want,
+			cfg:  cfg,
+		}
+		tb.Fatal(fail.String())
+	}
+}
+
+// NotEqualFunc is like [Equal] but accepts a custom comparator function, useful
+// when the items to be compared do not implement the comparable generic constraint.
+//
+// The signature of the comparator is such that standard library functions such as
+// [slices.Equal] or [maps.Equal] can be used.
+//
+// The comparator should return true if the two items should be considered equal.
+//
+//	test.EqualFunc(t, []int{1, 2, 3}, []int{1, 2, 3}, slices.Equal) // Fails
+//	test.EqualFunc(t, []int{1, 2, 3}, []int{4, 5, 6}, slices.Equal) // Passes
+func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, options ...Option) {
+	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "Equal"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("NotEqualFunc: could not apply options: %v", err)
+			return
+		}
+	}
+
+	if equal(got, want) {
+		cfg.reason = "equal(got, want) returned true"
+		fail := failure[T]{
+			got:  got,
+			want: want,
+			cfg:  cfg,
+		}
+		tb.Fatal(fail.String())
+	}
+}
+
+// NearlyEqual is like [Equal] but for floating point numbers where absolute equality often fails.
+//
+// If the difference between got and want is sufficiently small, they are considered equal. This threshold
+// defaults to 1e-8 but can be configured with the [FloatEqualityThreshold] option.
 //
 //	test.NearlyEqual(t, 3.0000000001, 3.0) // Passes, close enough to be considered equal
 //	test.NearlyEqual(t, 3.0000001, 3.0) // Fails, too different
-func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T) {
+func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T, options ...Option) {
 	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "Not NearlyEqual"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("NearlyEqual: could not apply options: %v", err)
+			return
+		}
+	}
+
 	diff := math.Abs(float64(got - want))
-	if diff >= floatEqualityThreshold {
+	if diff > cfg.floatEqualityThreshold {
+		cfg.reason = fmt.Sprintf(
+			"Difference %v - %v = %v exceeds maximum tolerance of %v",
+			got,
+			want,
+			diff,
+			cfg.floatEqualityThreshold,
+		)
 		fail := failure[T]{
-			got:   got,
-			want:  want,
-			title: "Not NearlyEqual",
-			reason: fmt.Sprintf(
-				"Difference %v exceeds maximum tolerance of %v",
-				diff,
-				floatEqualityThreshold,
-			),
-			comment: getComment(),
+			got:  got,
+			want: want,
+			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
-	}
-}
-
-// EqualFunc is like Equal but allows the user to pass a custom comparator, useful
-// when the items to be compared do not implement the comparable generic constraint
-//
-// The comparator should return true if the two items should be considered equal.
-func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
-	tb.Helper()
-	if !equal(got, want) {
-		fail := failure[T]{
-			got:     got,
-			want:    want,
-			title:   "Not Equal",
-			reason:  "equal(got, want) returned false",
-			comment: getComment(),
-		}
-		tb.Fatal(fail.String())
-	}
-}
-
-// NotEqual fails if got == want.
-//
-//	test.NotEqual(t, "apples", "oranges") // Passes
-//	test.NotEqual(t, "apples", "apples") // Fails
-func NotEqual[T comparable](tb testing.TB, got, want T) {
-	tb.Helper()
-	if got == want {
-		if comment := getComment(); comment != "" {
-			tb.Fatalf(
-				"\nEqual  // %s\n%s\nGot:\t%+v\n\nExpected values to be different\n",
-				comment,
-				strings.Repeat("-", len("Equal")),
-				got,
-			)
-		} else {
-			tb.Fatalf("\nEqual\n%s\nGot:\t%+v\n\nExpected values to be different\n", strings.Repeat("-", len("Equal")), got)
-		}
-	}
-}
-
-// NotEqualFunc is like NotEqual but allows the user to pass a custom comparator, useful
-// when the items to be compared do not implement the comparable generic constraint
-//
-// The comparator should return true if the two items should be considered equal.
-func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
-	tb.Helper()
-	if equal(got, want) {
-		if comment := getComment(); comment != "" {
-			tb.Fatalf(
-				"\nEqual  // %s\n%s\nGot:\t%+v\n\nequal(got, want) returned true\n",
-				comment,
-				strings.Repeat("-", len("Equal")),
-				got,
-			)
-		} else {
-			tb.Fatalf("\nEqual\n%s\nGot:\t%+v\n\nequal(got, want) returned true\n", strings.Repeat("-", len("Equal")), got)
-		}
 	}
 }
 
@@ -168,14 +178,23 @@ func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool) {
 //
 //	err := doSomething()
 //	test.Ok(t, err)
-func Ok(tb testing.TB, err error) {
+func Ok(tb testing.TB, err error, options ...Option) {
 	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "Not Ok"
+
+	for _, option := range options {
+		if optionErr := option.apply(&cfg); optionErr != nil {
+			tb.Fatalf("Ok: could not apply options: %v", optionErr)
+			return
+		}
+	}
+
 	if err != nil {
 		fail := failure[error]{
-			got:     err,
-			want:    nil,
-			title:   "Not Ok",
-			comment: getComment(),
+			got:  err,
+			want: nil,
+			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
 	}
@@ -183,36 +202,57 @@ func Ok(tb testing.TB, err error) {
 
 // Err fails if err == nil.
 //
-//	err := shouldReturnErr()
+//	err := shouldFail()
 //	test.Err(t, err)
-func Err(tb testing.TB, err error) {
+func Err(tb testing.TB, err error, options ...Option) {
 	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "Not Err"
+
+	for _, option := range options {
+		if optionErr := option.apply(&cfg); optionErr != nil {
+			tb.Fatalf("Err: could not apply options: %v", optionErr)
+			return
+		}
+	}
+
 	if err == nil {
 		fail := failure[error]{
-			got:     nil,
-			want:    errors.New("error"),
-			title:   "Not Err",
-			comment: getComment(),
+			got:  nil,
+			want: errors.New("error"),
+			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
 	}
 }
 
-// WantErr fails if you got an error and didn't want it, or if you
-// didn't get an error but wanted one.
+// WantErr fails if you got an error and didn't want it, or if you didn't
+// get an error but wanted one.
 //
-// It simplifies checking for errors in table driven tests where on any
-// iteration err may or may not be nil.
+// It greatly simplifies checking for errors in table driven tests where an error
+// may or may not be nil on any given test case.
 //
 //	test.WantErr(t, errors.New("uh oh"), true) // Passes, got error when we wanted one
 //	test.WantErr(t, errors.New("uh oh"), false) // Fails, got error but didn't want one
 //	test.WantErr(t, nil, true) // Fails, wanted an error but didn't get one
 //	test.WantErr(t, nil, false) // Passes, didn't want an error and didn't get one
-func WantErr(tb testing.TB, err error, want bool) {
+func WantErr(tb testing.TB, err error, want bool, options ...Option) {
 	tb.Helper()
+	cfg := defaultConfig()
+	cfg.title = "WantErr"
+
+	for _, option := range options {
+		if optionErr := option.apply(&cfg); optionErr != nil {
+			tb.Fatalf("WantErr: could not apply options: %v", optionErr)
+			return
+		}
+	}
+
 	if (err != nil) != want {
-		var reason string
-		var wanted error
+		var (
+			reason string
+			wanted error
+		)
 		if want {
 			reason = fmt.Sprintf("Wanted an error but got %v", err)
 			wanted = errors.New("error")
@@ -220,126 +260,89 @@ func WantErr(tb testing.TB, err error, want bool) {
 			reason = fmt.Sprintf("Got an unexpected error: %v", err)
 			wanted = nil
 		}
-		fail := failure[any]{
-			got:     err,
-			want:    wanted,
-			title:   "WantErr",
-			reason:  reason,
-			comment: getComment(),
+		cfg.reason = reason
+		fail := failure[error]{
+			got:  err,
+			want: wanted,
+			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
 	}
 }
 
-// True fails if v is false.
+// True fails if got is false.
 //
 //	test.True(t, true) // Passes
 //	test.True(t, false) // Fails
-func True(tb testing.TB, v bool) {
+func True(tb testing.TB, got bool, options ...Option) {
 	tb.Helper()
-	if !v {
+	cfg := defaultConfig()
+	cfg.title = "Not True"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("True: could not apply options: %v", err)
+			return
+		}
+	}
+
+	if !got {
 		fail := failure[bool]{
-			got:     v,
-			want:    true,
-			title:   "Not True",
-			comment: getComment(),
+			got:  got,
+			want: true,
+			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
 	}
 }
 
-// False fails if v is true.
+// False fails if got is true.
 //
 //	test.False(t, false) // Passes
 //	test.False(t, true) // Fails
-func False(tb testing.TB, v bool) {
+func False(tb testing.TB, got bool, options ...Option) {
 	tb.Helper()
-	if v {
+	cfg := defaultConfig()
+	cfg.title = "Not False"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("False: could not apply options: %v", err)
+			return
+		}
+	}
+
+	if got {
 		fail := failure[bool]{
-			got:     v,
-			want:    false,
-			title:   "Not False",
-			comment: getComment(),
+			got:  got,
+			want: false,
+			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
 	}
 }
 
-// Diff fails if got != want and provides a rich diff.
-func Diff(tb testing.TB, got, want any) {
-	// TODO: Nicer output for diff, don't like the +got -want thing
+// Diff fails if the two strings got and want are not equal and provides a rich
+// unified diff of the two for easy comparison.
+func Diff(tb testing.TB, got, want string) {
 	tb.Helper()
-	if diff := cmp.Diff(want, got); diff != "" {
-		tb.Fatalf("\nMismatch (-want, +got):\n%s\n", diff)
+
+	if diff := diff.Diff("want", []byte(want), "got", []byte(got)); diff != nil {
+		tb.Fatalf("\nDiff\n----\n%s\n", prettyDiff(string(diff)))
 	}
 }
 
-// DeepEqual fails if reflect.DeepEqual(got, want) == false.
-func DeepEqual(tb testing.TB, got, want any) {
+// DiffBytes fails if the two []byte got and want are not equal and provides a rich
+// unified diff of the two for easy comparison.
+func DiffBytes(tb testing.TB, got, want []byte) {
 	tb.Helper()
-	if !reflect.DeepEqual(got, want) {
-		fail := failure[any]{
-			got:     got,
-			want:    want,
-			title:   "Not Equal",
-			reason:  "reflect.DeepEqual(got, want) returned false",
-			comment: getComment(),
-		}
-		tb.Fatal(fail.String())
+
+	if diff := diff.Diff("want", want, "got", got); diff != nil {
+		tb.Fatalf("\nDiff\n----\n%s\n", prettyDiff(string(diff)))
 	}
 }
 
-// Data returns the filepath to the testdata directory for the current package.
-//
-// When running tests, Go will change the cwd to the directory of the package under test. This means
-// that reference data stored in $CWD/testdata can be easily retrieved in the same way for any package.
-//
-// The $CWD/testdata directory is a Go idiom, common practice, and is completely ignored by the go tool.
-//
-// Data makes no guarantee that $CWD/testdata exists, it simply returns it's path.
-//
-//	file := filepath.Join(test.Data(t), "test.txt")
-func Data(tb testing.TB) string {
-	tb.Helper()
-	cwd, err := os.Getwd()
-	if err != nil {
-		tb.Fatalf("could not get $CWD: %v", err)
-	}
-
-	return filepath.Join(cwd, "testdata")
-}
-
-// File fails if got does not match the contents of the given file.
-//
-// It takes a string and the path of a file to compare, use [Data] to obtain
-// the path to the current packages testdata directory.
-//
-// If the contents differ, the test will fail with output similar to executing git diff
-// on the contents.
-//
-// Files with differing line endings (e.g windows CR LF \r\n vs unix LF \n) will be normalised to
-// \n prior to comparison so this function will behave identically across multiple platforms.
-//
-//	test.File(t, "hello\n", "expected.txt")
-func File(tb testing.TB, got, file string) {
-	tb.Helper()
-	f, err := filepath.Abs(file)
-	if err != nil {
-		tb.Fatalf("could not make %s absolute: %v", file, err)
-	}
-	contents, err := os.ReadFile(f)
-	if err != nil {
-		tb.Fatalf("could not read %s: %v", f, err)
-	}
-
-	contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
-
-	if diff := diff.Diff(f, contents, "got", []byte(got)); diff != nil {
-		tb.Fatalf("\nMismatch\n--------\n%s\n", prettyDiff(string(diff)))
-	}
-}
-
-// CaptureOutput captures and returns data printed to stdout and stderr by the provided function fn, allowing
+// CaptureOutput captures and returns data printed to [os.Stdout] and [os.Stderr] by the provided function fn, allowing
 // you to test functions that write to those streams and do not have an option to pass in an [io.Writer].
 //
 // If the provided function returns a non nil error, the test is failed with the error logged as the reason.
@@ -427,46 +430,6 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 	wg.Wait()
 
 	return capturedStdout, capturedStderr
-}
-
-// getComment loads a Go line comment from a line where a test function has been called.
-//
-// If any error happens or there is no comment, an empty string is returned so as not
-// to influence the test with an unrelated error.
-func getComment() string {
-	skip := 2 // Skip 2 frames, one for this function, the other for the calling test function
-	_, file, line, ok := runtime.Caller(skip)
-	if !ok {
-		return ""
-	}
-
-	f, err := os.Open(file)
-	if err != nil {
-		return ""
-	}
-	defer f.Close()
-
-	currentLine := 1 // Line numbers in source files start from 1
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		// Skip through until we get to the line returned from runtime.Caller
-		if currentLine != line {
-			currentLine++
-			continue
-		}
-
-		_, comment, ok := strings.Cut(scanner.Text(), "//")
-		if !ok {
-			// There was no comment on this line
-			return ""
-		}
-
-		// Now comment will be everything from the "//" until the end of the line
-		return strings.TrimSpace(comment)
-	}
-
-	// Didn't find one
-	return ""
 }
 
 // prettyDiff takes a string diff in unified diff format and colourises it for easier viewing.

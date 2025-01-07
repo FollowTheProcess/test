@@ -197,6 +197,10 @@ func TestOutput(t *testing.T) {
 
 Under the hood `CaptureOutput` temporarily captures both streams, copies the data to a buffer and returns the output back to you, before cleaning everything back up again.
 
+### See Also
+
+- [FollowTheProcess/snapshot] for golden file/snapshot testing 📸
+
 ### Credits
 
 This package was created with [copier] and the [FollowTheProcess/go_copier] project template.
@@ -205,3 +209,4 @@ This package was created with [copier] and the [FollowTheProcess/go_copier] proj
 [FollowTheProcess/go_copier]: https://github.com/FollowTheProcess/go_copier
 [matryer/is]: https://github.com/matryer/is
 [earthboundkid/be]: https://github.com/earthboundkid/be
+[FollowTheProcess/snapshot]: https://github.com/FollowTheProcess/snapshot

@@ -18,5 +18,3 @@ jobs:
     permissions:
       contents: read
     uses: FollowTheProcess/ci/.github/workflows/Go.yml@feat/no-color
-    with:
-      env: '{"NO_COLOR": "true"}'

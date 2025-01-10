@@ -12,14 +12,11 @@ concurrency:
 
 permissions: {}
 
-env:
-  NO_COLOR: true
-
 jobs:
   ci:
     name: CI
     permissions:
       contents: read
-    uses: FollowTheProcess/ci/.github/workflows/Go.yml@feat/no-color
+    uses: FollowTheProcess/ci/.github/workflows/Go.yml@v1
     with:
-      env: ${{ toJson(github.env) }}
+      env: '{"NO_COLOR": "true"}'

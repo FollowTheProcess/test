@@ -15,8 +15,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/FollowTheProcess/test/internal/colour"
 	"github.com/FollowTheProcess/test/internal/diff"
+	"github.com/fatih/color"
+)
+
+var (
+	header = color.New(color.FgCyan, color.Bold)
+	green  = color.New(color.FgGreen)
+	red    = color.New(color.FgRed)
 )
 
 // Equal fails if got != want.
@@ -327,6 +333,7 @@ func False(tb testing.TB, got bool, options ...Option) {
 func Diff(tb testing.TB, got, want string) {
 	tb.Helper()
 
+	// TODO(@FollowTheProcess): If either got or want don't end in a newline, add one
 	if diff := diff.Diff("want", []byte(want), "got", []byte(got)); diff != nil {
 		tb.Fatalf("\nDiff\n----\n%s\n", prettyDiff(string(diff)))
 	}
@@ -434,19 +441,25 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 
 // prettyDiff takes a string diff in unified diff format and colourises it for easier viewing.
 func prettyDiff(diff string) string {
+	// color by default will look at whether stdout is a tty and the value of the
+	// $NO_COLOR env var, we need to override this because go test buffers output
+	// so it will appear as if it's not a tty, even though the end result is to show
+	// the output in a terminal. It still respects the value of $NO_COLOR.
+	color.NoColor = false || os.Getenv("NO_COLOR") != ""
+
 	lines := strings.Split(diff, "\n")
 	for i := 0; i < len(lines); i++ {
 		trimmed := strings.TrimSpace(lines[i])
 		if strings.HasPrefix(trimmed, "---") || strings.HasPrefix(trimmed, "- ") {
-			lines[i] = colour.Red(lines[i])
+			lines[i] = red.Sprint(lines[i])
 		}
 
 		if strings.HasPrefix(trimmed, "@@") {
-			lines[i] = colour.Header(lines[i])
+			lines[i] = header.Sprint(lines[i])
 		}
 
 		if strings.HasPrefix(trimmed, "+++") || strings.HasPrefix(trimmed, "+ ") {
-			lines[i] = colour.Green(lines[i])
+			lines[i] = green.Sprint(lines[i])
 		}
 	}
 

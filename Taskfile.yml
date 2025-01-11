@@ -39,8 +39,6 @@ tasks:
       - testdata/**/*.snap.txt
     cmds:
       - go test -race ./... {{ .CLI_ARGS }}
-    env:
-      NO_COLOR: true
 
   bench:
     desc: Run all project benchmarks

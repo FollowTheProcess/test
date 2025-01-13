@@ -1,7 +1,7 @@
-github.com/FollowTheProcess/hue v0.1.1 h1:7lbqq2pwIsB5qvir1RvIvNQLXWOdTl/IOqHHxI1vJu8=
-github.com/FollowTheProcess/hue v0.1.1/go.mod h1:T9IMtR7WyOoEKreUHsnEZnmn86su94g9Y/Hb4WszBUo=
-github.com/FollowTheProcess/snapshot v0.4.0 h1:/fbFtmDG4wO0rp1X2uSlkdlbx09oSDZbjut0AwaO5V0=
-github.com/FollowTheProcess/snapshot v0.4.0/go.mod h1:F1o4iTqDixcDJjKOVIAIKdjCbVyVgKEehkmpZbNtxlQ=
+github.com/FollowTheProcess/hue v0.2.0 h1:TJA6cqZl+3dRGnZagTZFw6FY4mqNWALmmtW0jkJOBkE=
+github.com/FollowTheProcess/hue v0.2.0/go.mod h1:T9IMtR7WyOoEKreUHsnEZnmn86su94g9Y/Hb4WszBUo=
+github.com/FollowTheProcess/snapshot v0.4.1 h1:WIwvs+yZrK9886frLbNB98QWkAXTjIGnuvEjURHOrtE=
+github.com/FollowTheProcess/snapshot v0.4.1/go.mod h1:hb3V3azvp8FVrl4pvyhvq/ZYOnFSgyKHfXt96Jgg4e0=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=

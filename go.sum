@@ -1,5 +1,5 @@
-github.com/FollowTheProcess/snapshot v0.2.0 h1:9pJ50rK5LCX1n6PSrCDZWlM0+m2fh3RUTAjfdVam0/A=
-github.com/FollowTheProcess/snapshot v0.2.0/go.mod h1:TM4sJgVLQHuQi+zCNrTUYxw2WtiSHdzLycVO8ix4AZ4=
+github.com/FollowTheProcess/snapshot v0.3.0 h1:LpTQCtuT0dTeWi2HhmHgHu17TtZlRPMBGtOzlQfh9HY=
+github.com/FollowTheProcess/snapshot v0.3.0/go.mod h1:ADH1yxxSZgDhTH5hUe+g0gB+ZQ/TGELfPHTw853qJjw=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
 github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=

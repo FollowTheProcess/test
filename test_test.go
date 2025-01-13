@@ -434,8 +434,7 @@ func TestTest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			tb := &TB{out: buf}
-			t.Setenv("NO_COLOR", "true")
-			snap := snapshot.New(t, snapshot.Update(*update))
+			snap := snapshot.New(t, snapshot.Update(*update), snapshot.Color(false))
 
 			if tb.failed {
 				t.Fatalf("%s initial failed state should be false", tt.name)

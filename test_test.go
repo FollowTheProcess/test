@@ -24,7 +24,7 @@ type TB struct {
 	failed bool
 }
 
-func (t *TB) Helper() {}
+func (t *TB) Helper() {} //nolint: revive // We don't use t because it does nothing
 
 func (t *TB) Fatal(args ...any) {
 	t.failed = true
@@ -122,7 +122,7 @@ func TestTest(t *testing.T) {
 		{
 			name: "EqualFunc/fail",
 			fn: func(tb testing.TB) {
-				cmp := func(a, b []string) bool { return false } // Cheating
+				cmp := func(_, _ []string) bool { return false } // Cheating
 				test.EqualFunc(tb, []string{"hello"}, []string{"there"}, cmp)
 			},
 			wantFail: true,
@@ -170,7 +170,7 @@ func TestTest(t *testing.T) {
 		{
 			name: "NotEqualFunc/fail",
 			fn: func(tb testing.TB) {
-				cmp := func(a, b []string) bool { return true } // Cheating
+				cmp := func(_, _ []string) bool { return true } // Cheating
 				test.NotEqualFunc(tb, []string{"hello"}, []string{"there"}, cmp)
 			},
 			wantFail: true,
@@ -267,7 +267,7 @@ func TestTest(t *testing.T) {
 		{
 			name: "Err/pass",
 			fn: func(tb testing.TB) {
-				test.Err(tb, errors.New("bang!"))
+				test.Err(tb, errors.New("bang"))
 			},
 			wantFail: false,
 		},

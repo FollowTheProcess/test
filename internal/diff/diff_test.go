@@ -17,6 +17,7 @@ import (
 func clean(text []byte) []byte {
 	text = bytes.ReplaceAll(text, []byte("$\n"), []byte("\n"))
 	text = bytes.TrimSuffix(text, []byte("^D\n"))
+
 	return text
 }
 
@@ -25,6 +26,7 @@ func Test(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not glob txtar files: %v", err)
 	}
+
 	if len(files) == 0 {
 		t.Fatalf("no testdata")
 	}
@@ -37,10 +39,12 @@ func Test(t *testing.T) {
 			}
 			// Stupid windows
 			contents = bytes.ReplaceAll(contents, []byte("\r\n"), []byte("\n"))
+
 			archive := txtar.Parse(contents)
 			if len(archive.Files) != 3 || archive.Files[2].Name != "diff" {
 				t.Fatalf("%s: want three files, third named \"diff\", got: %v", file, archive.Files)
 			}
+
 			diffs := diff.Diff(
 				archive.Files[0].Name,
 				clean(archive.Files[0].Data),
@@ -48,6 +52,7 @@ func Test(t *testing.T) {
 				clean(archive.Files[1].Data),
 			)
 			want := clean(archive.Files[2].Data)
+
 			if !bytes.Equal(diffs, want) {
 				t.Fatalf("%s: have:\n%s\nwant:\n%s\n%s", file,
 					diffs, want, diff.Diff("have", diffs, "want", want))

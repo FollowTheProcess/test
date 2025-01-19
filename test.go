@@ -31,12 +31,14 @@ const (
 //	test.Equal(t, "apples", "oranges") // Fails
 func Equal[T comparable](tb testing.TB, got, want T, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Not Equal"
 
 	for _, option := range options {
 		if err := option.apply(&cfg); err != nil {
 			tb.Fatalf("Equal: could not apply options: %v", err)
+
 			return
 		}
 	}
@@ -57,12 +59,14 @@ func Equal[T comparable](tb testing.TB, got, want T, options ...Option) {
 //	test.NotEqual(t, 42, 42) // Fails
 func NotEqual[T comparable](tb testing.TB, got, want T, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Equal"
 
 	for _, option := range options {
 		if err := option.apply(&cfg); err != nil {
 			tb.Fatalf("NotEqual: could not apply options: %v", err)
+
 			return
 		}
 	}
@@ -89,12 +93,14 @@ func NotEqual[T comparable](tb testing.TB, got, want T, options ...Option) {
 //	test.EqualFunc(t, []int{1, 2, 3}, []int{4, 5, 6}, slices.Equal) // Fails
 func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Not Equal"
 
 	for _, option := range options {
 		if err := option.apply(&cfg); err != nil {
 			tb.Fatalf("EqualFunc: could not apply options: %v", err)
+
 			return
 		}
 	}
@@ -122,12 +128,14 @@ func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, optio
 //	test.EqualFunc(t, []int{1, 2, 3}, []int{4, 5, 6}, slices.Equal) // Passes
 func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Equal"
 
 	for _, option := range options {
 		if err := option.apply(&cfg); err != nil {
 			tb.Fatalf("NotEqualFunc: could not apply options: %v", err)
+
 			return
 		}
 	}
@@ -152,12 +160,14 @@ func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, op
 //	test.NearlyEqual(t, 3.0000001, 3.0) // Fails, too different
 func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Not NearlyEqual"
 
 	for _, option := range options {
 		if err := option.apply(&cfg); err != nil {
 			tb.Fatalf("NearlyEqual: could not apply options: %v", err)
+
 			return
 		}
 	}
@@ -186,12 +196,14 @@ func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T, options ...O
 //	test.Ok(t, err)
 func Ok(tb testing.TB, err error, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Not Ok"
 
 	for _, option := range options {
 		if optionErr := option.apply(&cfg); optionErr != nil {
 			tb.Fatalf("Ok: could not apply options: %v", optionErr)
+
 			return
 		}
 	}
@@ -212,12 +224,14 @@ func Ok(tb testing.TB, err error, options ...Option) {
 //	test.Err(t, err)
 func Err(tb testing.TB, err error, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Not Err"
 
 	for _, option := range options {
 		if optionErr := option.apply(&cfg); optionErr != nil {
 			tb.Fatalf("Err: could not apply options: %v", optionErr)
+
 			return
 		}
 	}
@@ -244,12 +258,14 @@ func Err(tb testing.TB, err error, options ...Option) {
 //	test.WantErr(t, nil, false) // Passes, didn't want an error and didn't get one
 func WantErr(tb testing.TB, err error, want bool, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "WantErr"
 
 	for _, option := range options {
 		if optionErr := option.apply(&cfg); optionErr != nil {
 			tb.Fatalf("WantErr: could not apply options: %v", optionErr)
+
 			return
 		}
 	}
@@ -259,6 +275,7 @@ func WantErr(tb testing.TB, err error, want bool, options ...Option) {
 			reason string
 			wanted error
 		)
+
 		if want {
 			reason = fmt.Sprintf("Wanted an error but got %v", err)
 			wanted = errors.New("error")
@@ -266,6 +283,7 @@ func WantErr(tb testing.TB, err error, want bool, options ...Option) {
 			reason = fmt.Sprintf("Got an unexpected error: %v", err)
 			wanted = nil
 		}
+
 		cfg.reason = reason
 		fail := failure[error]{
 			got:  err,
@@ -282,12 +300,14 @@ func WantErr(tb testing.TB, err error, want bool, options ...Option) {
 //	test.True(t, false) // Fails
 func True(tb testing.TB, got bool, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Not True"
 
 	for _, option := range options {
 		if err := option.apply(&cfg); err != nil {
 			tb.Fatalf("True: could not apply options: %v", err)
+
 			return
 		}
 	}
@@ -308,12 +328,14 @@ func True(tb testing.TB, got bool, options ...Option) {
 //	test.False(t, true) // Fails
 func False(tb testing.TB, got bool, options ...Option) {
 	tb.Helper()
+
 	cfg := defaultConfig()
 	cfg.title = "Not False"
 
 	for _, option := range options {
 		if err := option.apply(&cfg); err != nil {
 			tb.Fatalf("False: could not apply options: %v", err)
+
 			return
 		}
 	}
@@ -395,7 +417,8 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 	stderrCapture := make(chan string)
 
 	var wg sync.WaitGroup
-	wg.Add(2) //nolint: mnd
+
+	wg.Add(2) //nolint: mnd // 2 because stdout and stderr
 
 	// Copy in goroutines to avoid blocking
 	go func(wg *sync.WaitGroup) {
@@ -403,6 +426,7 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 			close(stdoutCapture)
 			wg.Done()
 		}()
+
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
@@ -415,6 +439,7 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 			close(stderrCapture)
 			wg.Done()
 		}()
+
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stderrReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
@@ -428,8 +453,15 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 	}
 
 	// Close the writers
-	stdoutWriter.Close()
-	stderrWriter.Close()
+	stdoutCloseErr := stdoutWriter.Close()
+	if stdoutCloseErr != nil {
+		tb.Fatalf("CaptureOutput: could not close stdout pipe: %v", stdoutCloseErr)
+	}
+
+	stderrCloseErr := stderrWriter.Close()
+	if stderrCloseErr != nil {
+		tb.Fatalf("CaptueOutput: could not close stderr pipe: %v", stderrCloseErr)
+	}
 
 	capturedStdout := <-stdoutCapture
 	capturedStderr := <-stderrCapture

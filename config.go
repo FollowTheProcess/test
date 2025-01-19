@@ -62,12 +62,12 @@ func (f failure[T]) String() string {
 type Option interface {
 	// Apply the option to the test config, returning an error if the option
 	// cannot be applied for whatever reason.
-	apply(*config) error
+	apply(cfg *config) error
 }
 
 // option is a function adapter implementing the Option interface, analogous
 // to how http.HandlerFunc implements the Handler interface.
-type option func(*config) error
+type option func(cfg *config) error
 
 // apply applies the option, implementing the Option interface for the option
 // function adapter.
@@ -87,9 +87,12 @@ func FloatEqualityThreshold(threshold float64) Option {
 		if math.IsInf(threshold, 0) {
 			return errors.New("cannot set floating point equality threshold to ±infinity")
 		}
+
 		cfg.floatEqualityThreshold = threshold
+
 		return nil
 	}
+
 	return option(f)
 }
 
@@ -109,9 +112,12 @@ func Title(title string) Option {
 		if title == "" {
 			return errors.New("cannot set title to an empty string")
 		}
+
 		cfg.title = strings.TrimSpace(title)
+
 		return nil
 	}
+
 	return option(f)
 }
 
@@ -134,9 +140,12 @@ func Context(format string, args ...any) Option {
 		if format == "" {
 			return errors.New("cannot set context to an empty string")
 		}
+
 		context := fmt.Sprintf(format, args...)
 		cfg.context = strings.TrimSpace(context)
+
 		return nil
 	}
+
 	return option(f)
 }

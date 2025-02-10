@@ -1,5 +1,5 @@
-github.com/FollowTheProcess/hue v0.3.1 h1:3axoXNxWFzyj3fvL6N/20fosmPbX+Dr6i07aDz8gv7g=
-github.com/FollowTheProcess/hue v0.3.1/go.mod h1:PDpb1DXuZmN3VT7pwru+V3E4WCPQ0TghQIYaqkpOLxo=
+github.com/FollowTheProcess/hue v0.4.0 h1:r7vuiFGZTgs4ekJb0CpIs2oqoh36Vohum0OKL1yAKf4=
+github.com/FollowTheProcess/hue v0.4.0/go.mod h1:PDpb1DXuZmN3VT7pwru+V3E4WCPQ0TghQIYaqkpOLxo=
 github.com/FollowTheProcess/snapshot v0.4.1 h1:WIwvs+yZrK9886frLbNB98QWkAXTjIGnuvEjURHOrtE=
 github.com/FollowTheProcess/snapshot v0.4.1/go.mod h1:hb3V3azvp8FVrl4pvyhvq/ZYOnFSgyKHfXt96Jgg4e0=
 golang.org/x/sys v0.29.0 h1:TPYlXGxvx1MGTn2GiZDhnjPA9wZzZeGKHHmKhHYvgaU=

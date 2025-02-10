@@ -3,7 +3,7 @@ module github.com/FollowTheProcess/test
 go 1.23
 
 require (
-	github.com/FollowTheProcess/hue v0.3.1
+	github.com/FollowTheProcess/hue v0.4.0
 	github.com/FollowTheProcess/snapshot v0.4.1
 	golang.org/x/tools v0.29.0
 )

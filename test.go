@@ -25,6 +25,21 @@ const (
 	red    = hue.Red
 )
 
+// ColorEnabled sets whether the output from this package is colourised.
+//
+// test defaults to automatic detection based on a number of attributes:
+//   - The value of $NO_COLOR and/or $FORCE_COLOR
+//   - The value of $TERM (xterm enables colour)
+//   - Whether [os.Stdout] is pointing to a terminal
+//
+// This means that test should do a reasonable job of auto-detecting when to colourise output
+// and should not write escape sequences when piping between processes or when writing to files etc.
+//
+// ColorEnabled may be called safely from concurrently executing goroutines.
+func ColorEnabled(v bool) {
+	hue.Enabled(v)
+}
+
 // Equal fails if got != want.
 //
 //	test.Equal(t, "apples", "apples") // Passes

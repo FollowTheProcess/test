@@ -24,7 +24,7 @@ type TB struct {
 	failed bool
 }
 
-func (t *TB) Helper() {} //nolint: revive // We don't use t because it does nothing
+func (t *TB) Helper() {}
 
 func (t *TB) Fatal(args ...any) {
 	t.failed = true

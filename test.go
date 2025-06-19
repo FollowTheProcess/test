@@ -2,7 +2,7 @@
 // a friendlier and more intuitive API.
 //
 // Simple tests become trivial and test provides mechanisms for adding useful context to test failures.
-package test
+package test // import "go.followtheprocess.codes/test"
 
 import (
 	"bytes"
@@ -15,8 +15,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/FollowTheProcess/hue"
-	"github.com/FollowTheProcess/test/internal/diff"
+	"go.followtheprocess.codes/hue"
+	"go.followtheprocess.codes/test/internal/diff"
 )
 
 const (

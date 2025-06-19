@@ -1,7 +1,7 @@
 # test
 
 [![License](https://img.shields.io/github/license/FollowTheProcess/test)](https://github.com/FollowTheProcess/test)
-[![Go Reference](https://pkg.go.dev/badge/github.com/FollowTheProcess/test.svg)](https://pkg.go.dev/github.com/FollowTheProcess/test)
+[![Go Reference](https://pkg.go.dev/badge/go.followtheprocess.codes/test.svg)](https://pkg.go.dev/go.followtheprocess.codes/test)
 [![Go Report Card](https://goreportcard.com/badge/github.com/FollowTheProcess/test)](https://goreportcard.com/report/github.com/FollowTheProcess/test)
 [![GitHub](https://img.shields.io/github/v/release/FollowTheProcess/test?logo=github&sort=semver)](https://github.com/FollowTheProcess/test)
 [![CI](https://github.com/FollowTheProcess/test/workflows/CI/badge.svg)](https://github.com/FollowTheProcess/test/actions?query=workflow%3ACI)
@@ -19,7 +19,7 @@ but might find it useful anyway 🙂
 ## Installation
 
 ```shell
-go get github.com/FollowTheProcess/test@latest
+go get go.followtheprocess.codes/test@latest
 ```
 
 ## Usage

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/FollowTheProcess/test/internal/diff"
+	"go.followtheprocess.codes/test/internal/diff"
 	"golang.org/x/tools/txtar"
 )
 

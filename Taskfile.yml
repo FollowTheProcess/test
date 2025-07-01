@@ -9,6 +9,7 @@ tasks:
   default:
     desc: List all available tasks
     silent: true
+    internal: true
     cmds:
       - task --list
 
@@ -25,18 +26,17 @@ tasks:
     desc: Run go fmt on all source files
     sources:
       - "**/*.go"
-    preconditions:
-      - sh: command -v golines
-        msg: golines not installed, run `go install github.com/segmentio/golines@latest`
+      - .golangci.yml
     cmds:
-      - go fmt ./...
-      - golines . --ignore-generated --write-output --max-len 120
+      - golangci-lint fmt
 
   test:
     desc: Run the test suite
     sources:
       - "**/*.go"
-      - testdata/**/*.snap.txt
+      - go.mod
+      - go.sum
+      - "**/testdata/**/*"
     cmds:
       - go test -race ./... {{ .CLI_ARGS }}
 
@@ -52,8 +52,6 @@ tasks:
     sources:
       - "**/*.go"
       - .golangci.yml
-    deps:
-      - fmt
     preconditions:
       - sh: command -v golangci-lint
         msg: golangci-lint not installed, see https://golangci-lint.run/usage/install/#local-installation

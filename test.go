@@ -446,6 +446,7 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
 		}
+
 		stdoutCapture <- buf.String()
 	}(&wg)
 
@@ -459,6 +460,7 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 		if _, err := io.Copy(buf, stderrReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
 		}
+
 		stderrCapture <- buf.String()
 	}(&wg)
 

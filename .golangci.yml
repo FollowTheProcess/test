@@ -36,6 +36,7 @@ linters:
     - nestif # cyclop does this
     - nlreturn # Similar to wsl, I think best left to judgement
     - nonamedreturns # Named returns are often helpful, it's naked returns that are the issue
+    - noinlineerr # This is more readable in some cases
     - paralleltest # I've never had Go tests take longer than a few seconds, it's fine
     - thelper # Everything in here is a helper basically
     - unparam # gopls is better and more subtle
@@ -54,7 +55,7 @@ linters:
         linters:
           - prealloc # These kinds of optimisations will make no difference to test code
           - gosec # Tests don't need security stuff
-          - goconst
+          - goconst # Nah
 
     paths:
       - internal/diff
@@ -161,6 +162,7 @@ linters:
             - fmt\.(Fp|P)rint(ln|f)?
             - strings.Builder.Write(String|Byte)?
             - bytes.Buffer.Write(String|Byte)?
+            - os.File.Close?
 
         - name: flag-parameter
           disabled: true # As far as I can work out this just doesn't like bools

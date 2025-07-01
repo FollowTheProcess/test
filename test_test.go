@@ -14,12 +14,16 @@ import (
 	"go.followtheprocess.codes/test"
 )
 
-var update = flag.Bool("update", false, "Update snapshots")
+var (
+	update = flag.Bool("update", false, "Update snapshots")
+	clean  = flag.Bool("clean", false, "Erase all snapshots and recreate them from scratch")
+)
 
 // TB is a fake implementation of [testing.TB] that simply records in internal
 // state whether or not it would have failed and what it would have written.
 type TB struct {
 	testing.TB
+
 	out    io.Writer
 	failed bool
 }
@@ -434,7 +438,7 @@ func TestTest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			tb := &TB{out: buf}
-			snap := snapshot.New(t, snapshot.Update(*update), snapshot.Color(false))
+			snap := snapshot.New(t, snapshot.Update(*update), snapshot.Clean(*clean), snapshot.Color(false))
 
 			if tb.failed {
 				t.Fatalf("%s initial failed state should be false", tt.name)

@@ -35,14 +35,15 @@ linters:
     - maintidx # This is just the inverse of complexity... which is cyclop
     - nestif # cyclop does this
     - nlreturn # Similar to wsl, I think best left to judgement
+    - noinlineerr # Inline errors are fine
     - nonamedreturns # Named returns are often helpful, it's naked returns that are the issue
-    - noinlineerr # This is more readable in some cases
     - paralleltest # I've never had Go tests take longer than a few seconds, it's fine
     - thelper # Everything in here is a helper basically
     - unparam # gopls is better and more subtle
     - varnamelen # Lots of false positives of things that are fine
     - wrapcheck # Not every error must be wrapped
     - wsl # Very aggressive, some of this I like but tend to do anyway
+    - wsl_v5 # As above, just newer version
 
   exclusions:
     presets:
@@ -162,7 +163,7 @@ linters:
             - fmt\.(Fp|P)rint(ln|f)?
             - strings.Builder.Write(String|Byte)?
             - bytes.Buffer.Write(String|Byte)?
-            - os.File.Close?
+            - go/printer.(Fp|P)rint(ln|f)?
 
         - name: flag-parameter
           disabled: true # As far as I can work out this just doesn't like bools

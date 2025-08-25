@@ -367,19 +367,24 @@ func False(tb testing.TB, got bool, options ...Option) {
 
 // Diff fails if the two strings got and want are not equal and provides a rich
 // unified diff of the two for easy comparison.
+//
+// If either got or want do not end in a newline, one is added to avoid a
+// "No newline at end of file" warning in the diff which is visually distracting.
 func Diff(tb testing.TB, got, want string) {
 	tb.Helper()
-
-	// TODO(@FollowTheProcess): If either got or want don't end in a newline, add one
-	if diff := diff.Diff("want", []byte(want), "got", []byte(got)); diff != nil {
-		tb.Fatalf("\nDiff\n----\n%s\n", prettyDiff(string(diff)))
-	}
+	DiffBytes(tb, []byte(got), []byte(want))
 }
 
 // DiffBytes fails if the two []byte got and want are not equal and provides a rich
 // unified diff of the two for easy comparison.
+//
+// If either got or want do not end in a newline, one is added to avoid a
+// "No newline at end of file" warning in the diff which is visually distracting.
 func DiffBytes(tb testing.TB, got, want []byte) {
 	tb.Helper()
+
+	got = fixNL(got)
+	want = fixNL(want)
 
 	if diff := diff.Diff("want", want, "got", got); diff != nil {
 		tb.Fatalf("\nDiff\n----\n%s\n", prettyDiff(string(diff)))
@@ -507,4 +512,17 @@ func prettyDiff(diff string) string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// If data is empty or ends in \n, fixNL returns data.
+// Otherwise fixNL returns a new slice consisting of data with a final \n added.
+func fixNL(data []byte) []byte {
+	if len(data) == 0 || data[len(data)-1] == '\n' {
+		return data
+	}
+	d := make([]byte, len(data)+1)
+	copy(d, data)
+	d[len(data)] = '\n'
+
+	return d
 }

@@ -494,15 +494,15 @@ func prettyDiff(diff string) string {
 	for i := range lines {
 		trimmed := strings.TrimSpace(lines[i])
 		if strings.HasPrefix(trimmed, "---") || strings.HasPrefix(trimmed, "- ") {
-			lines[i] = red.Sprint(lines[i])
+			lines[i] = red.Text(lines[i])
 		}
 
 		if strings.HasPrefix(trimmed, "@@") {
-			lines[i] = header.Sprint(lines[i])
+			lines[i] = header.Text(lines[i])
 		}
 
 		if strings.HasPrefix(trimmed, "+++") || strings.HasPrefix(trimmed, "+ ") {
-			lines[i] = green.Sprint(lines[i])
+			lines[i] = green.Text(lines[i])
 		}
 	}
 

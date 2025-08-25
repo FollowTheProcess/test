@@ -59,15 +59,15 @@ Will get you an error log in the test that looks like this...
 
 ```plaintext
 --- FAIL: TestDemo (0.00s)
-    test_test.go:501: 
+    test_test.go:501:
         Fruit scramble!
         ---------------
-        
+
         Got:    apples
         Wanted: oranges
-        
+
         (Apples are not oranges!)
-        
+
 FAIL
 ```
 
@@ -122,11 +122,11 @@ func TestTableThings(t *testing.T) {
             wantErr: true,
         },
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             got, err := SomeFunction()
-    
+
             test.WantErr(t, err, tt.wantErr)
             test.Equal(t, got, tt.want)
         })
@@ -154,11 +154,11 @@ func TestTableThings(t *testing.T) {
             wantErr: true,
         },
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             got, err := SomeFunction()
-    
+
             if tt.wantErr {
                 test.Err(t, err)
             } else {

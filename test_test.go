@@ -405,10 +405,29 @@ func TestTest(t *testing.T) {
 			wantFail: false,
 		},
 		{
+			name: "Diff/pass no trailing newline",
+			fn: func(tb testing.TB) {
+				got := "Some\nstuff here in this file\nlines as well wow\nsome more stuff"
+				want := "Some\nstuff here in this file\nlines as well wow\nsome more stuff"
+
+				test.Diff(tb, got, want)
+			},
+			wantFail: false,
+		},
+		{
 			name: "Diff/fail",
 			fn: func(tb testing.TB) {
 				got := "Some\nstuff here in this file\nlines as well wow\nsome more stuff\n"
 				want := "Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff\n"
+				test.Diff(tb, got, want)
+			},
+			wantFail: true,
+		},
+		{
+			name: "Diff/fail no trailing newline",
+			fn: func(tb testing.TB) {
+				got := "Some\nstuff here in this file\nlines as well wow\nsome more stuff"
+				want := "Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff"
 				test.Diff(tb, got, want)
 			},
 			wantFail: true,

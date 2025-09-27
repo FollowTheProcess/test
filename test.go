@@ -438,36 +438,30 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(2) //nolint: mnd // 2 because stdout and stderr
-
 	// Copy in goroutines to avoid blocking
-	go func(wg *sync.WaitGroup) {
+	wg.Go(func() {
 		defer func() {
 			close(stdoutCapture)
-			wg.Done()
 		}()
-
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
 		}
 
 		stdoutCapture <- buf.String()
-	}(&wg)
+	})
 
-	go func(wg *sync.WaitGroup) {
+	wg.Go(func() {
 		defer func() {
 			close(stderrCapture)
-			wg.Done()
 		}()
-
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stderrReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
 		}
 
 		stderrCapture <- buf.String()
-	}(&wg)
+	})
 
 	// Call the test function that produces the output
 	if err := fn(); err != nil {

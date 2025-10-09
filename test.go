@@ -476,7 +476,7 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 
 	stderrCloseErr := stderrWriter.Close()
 	if stderrCloseErr != nil {
-		tb.Fatalf("CaptueOutput: could not close stderr pipe: %v", stderrCloseErr)
+		tb.Fatalf("CaptureOutput: could not close stderr pipe: %v", stderrCloseErr)
 	}
 
 	capturedStdout := <-stdoutCapture

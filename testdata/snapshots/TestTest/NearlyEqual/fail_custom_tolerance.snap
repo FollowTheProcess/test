@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Not NearlyEqual
+  ---------------
+
+  Got:	3.2
+  Wanted:	3
+
+  Because: Difference 3.2 - 3 = 0.20000000000000018 exceeds maximum tolerance of 0.1

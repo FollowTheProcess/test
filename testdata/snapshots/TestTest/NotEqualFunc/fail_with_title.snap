@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Hello!
+  ------
+
+  Got:	[hello]
+  Wanted:	[hello]
+
+  Because: equal(got, want) returned true

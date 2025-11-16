@@ -1,0 +1,10 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Not False
+  ---------
+
+  Got:	true
+  Wanted:	false

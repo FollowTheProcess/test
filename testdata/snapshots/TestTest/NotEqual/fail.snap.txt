@@ -1,6 +1,0 @@
-
-Equal
------
-
-Got:	apples
-Wanted:	apples

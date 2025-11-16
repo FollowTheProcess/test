@@ -1,8 +1,0 @@
-
-Not Err
--------
-
-Got:	<nil>
-Wanted:	error
-
-(Frobnicated the baz when it should have failed)

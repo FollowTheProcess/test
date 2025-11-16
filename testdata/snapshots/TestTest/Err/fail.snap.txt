@@ -1,6 +1,0 @@
-
-Not Err
--------
-
-Got:	<nil>
-Wanted:	error

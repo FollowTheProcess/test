@@ -1,6 +1,0 @@
-
-Argh!
------
-
-Got:	true
-Wanted:	false

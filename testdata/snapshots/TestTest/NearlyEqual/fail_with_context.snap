@@ -1,0 +1,14 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Not NearlyEqual
+  ---------------
+
+  Got:	3.0000001
+  Wanted:	3
+
+  (Numbers don't work that way)
+
+  Because: Difference 3.0000001 - 3 = 9.999999983634211e-08 exceeds maximum tolerance of 1e-08

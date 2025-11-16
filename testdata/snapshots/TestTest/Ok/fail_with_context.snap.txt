@@ -1,8 +1,0 @@
-
-Not Ok
-------
-
-Got:	uh oh
-Wanted:	<nil>
-
-(Could not frobnicate the baz)

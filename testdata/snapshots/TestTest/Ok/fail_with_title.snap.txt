@@ -1,6 +1,0 @@
-
-Bang!
------
-
-Got:	uh oh
-Wanted:	<nil>

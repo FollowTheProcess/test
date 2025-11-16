@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  A very bad test
+  ---------------
+
+  Got:	bang
+  Wanted:	<nil>
+
+  Because: Got an unexpected error: bang

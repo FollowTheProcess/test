@@ -1,0 +1,14 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Not Equal
+  ---------
+
+  Got:	[hello]
+  Wanted:	[there]
+
+  (some context here)
+
+  Because: equal(got, want) returned false

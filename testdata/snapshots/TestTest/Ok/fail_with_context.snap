@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Not Ok
+  ------
+
+  Got:	uh oh
+  Wanted:	<nil>
+
+  (Could not frobnicate the baz)

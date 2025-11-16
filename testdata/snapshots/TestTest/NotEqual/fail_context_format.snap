@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Equal
+  -----
+
+  Got:	42
+  Wanted:	42
+
+  (42 == meaning of life: true)

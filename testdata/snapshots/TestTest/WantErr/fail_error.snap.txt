@@ -1,8 +1,0 @@
-
-WantErr
--------
-
-Got:	bang
-Wanted:	<nil>
-
-Because: Got an unexpected error: bang

@@ -1,8 +1,0 @@
-
-Not False
----------
-
-Got:	true
-Wanted:	false
-
-(must always be false)

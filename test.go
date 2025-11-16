@@ -29,7 +29,7 @@ const (
 //
 // test defaults to automatic detection based on a number of attributes:
 //   - The value of $NO_COLOR and/or $FORCE_COLOR
-//   - The value of $TERM (xterm enables colour)
+//   - The value of $TERM
 //   - Whether [os.Stdout] is pointing to a terminal
 //
 // This means that test should do a reasonable job of auto-detecting when to colourise output

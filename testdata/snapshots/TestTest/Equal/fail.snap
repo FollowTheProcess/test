@@ -1,0 +1,10 @@
+source: test_test.go
+expression: buf.String()
+---
+|2
+
+  Not Equal
+  ---------
+
+  Got:	apples
+  Wanted:	oranges

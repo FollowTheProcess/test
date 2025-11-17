@@ -451,6 +451,26 @@ func TestTest(t *testing.T) {
 			},
 			wantFail: true,
 		},
+		{
+			name: "DiffReader/pass",
+			fn: func(tb testing.TB) {
+				got := []byte("Some\nstuff here in this file\nlines as well wow\nsome more stuff\n")
+				want := []byte("Some\nstuff here in this file\nlines as well wow\nsome more stuff\n")
+
+				test.DiffReader(tb, bytes.NewReader(got), bytes.NewReader(want))
+			},
+			wantFail: false,
+		},
+		{
+			name: "DiffReader/fail",
+			fn: func(tb testing.TB) {
+				got := []byte("Some\nstuff here in this file\nlines as well wow\nsome more stuff\n")
+				want := []byte("Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff\n")
+
+				test.DiffReader(tb, bytes.NewReader(got), bytes.NewReader(want))
+			},
+			wantFail: true,
+		},
 	}
 
 	for _, tt := range tests {

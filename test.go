@@ -391,6 +391,30 @@ func DiffBytes(tb testing.TB, got, want []byte) {
 	}
 }
 
+// DiffReader reads data from both got and want [io.Reader] and provides
+// a rich unified diff of the two for easy comparison.
+//
+// If either got or want do not end in a newline, one is added to avoid
+// a "No newline at end of file" warning in the diff which is visually distracting.
+func DiffReader(tb testing.TB, got, want io.Reader) {
+	tb.Helper()
+
+	gotData, err := io.ReadAll(got)
+	if err != nil {
+		tb.Fatalf("DiffReader: could not read from got: %v\n", err)
+	}
+
+	wantData, err := io.ReadAll(want)
+	if err != nil {
+		tb.Fatalf("DiffReader: could not read from want: %v\n", err)
+	}
+
+	gotData = fixNL(gotData)
+	wantData = fixNL(wantData)
+
+	DiffBytes(tb, gotData, wantData)
+}
+
 // CaptureOutput captures and returns data printed to [os.Stdout] and [os.Stderr] by the provided function fn, allowing
 // you to test functions that write to those streams and do not have an option to pass in an [io.Writer].
 //

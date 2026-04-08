@@ -1,9 +1,9 @@
 module go.followtheprocess.codes/test
 
-go 1.25.0
+go 1.26
 
 require (
-	go.followtheprocess.codes/hue v1.0.0
+	go.followtheprocess.codes/hue v1.1.0
 	go.followtheprocess.codes/snapshot v0.9.1
 	golang.org/x/tools v0.43.0
 )

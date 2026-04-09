@@ -90,6 +90,14 @@ func TestCharDiff(t *testing.T) {
 			added:          []byte("0"),
 			wantHasChanged: true,
 		},
+		{
+			// Regression: identical invalid UTF-8 bytes must produce all-unchanged segments.
+			// \x80 is a bare continuation byte — invalid UTF-8 on its own.
+			name:             "identical invalid UTF-8",
+			removed:          []byte("\x80"),
+			added:            []byte("\x80"),
+			wantAllUnchanged: true,
+		},
 	}
 
 	for _, tt := range tests {

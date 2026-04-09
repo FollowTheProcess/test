@@ -1,6 +1,7 @@
 package diff
 
 import (
+	"bytes"
 	"unicode/utf8"
 )
 
@@ -21,6 +22,18 @@ type InlineChange struct {
 // Strips and restores trailing \n before diffing.
 // If either side exceeds 500 runes, returns a single-segment fallback (whole-line).
 func CharDiff(removed, added []byte) InlineChange {
+	// Identical inputs: short-circuit before any UTF-8 handling. This also
+	// covers identical invalid UTF-8, where fallback would wrongly return
+	// Changed:true segments.
+	if bytes.Equal(removed, added) {
+		seg := Segment{Text: append([]byte(nil), removed...), Changed: false}
+
+		return InlineChange{
+			Removed: []Segment{seg},
+			Added:   []Segment{{Text: append([]byte(nil), added...), Changed: false}},
+		}
+	}
+
 	// Strip trailing newline, remember whether each side had one.
 	removedNL := len(removed) > 0 && removed[len(removed)-1] == '\n'
 	addedNL := len(added) > 0 && added[len(added)-1] == '\n'

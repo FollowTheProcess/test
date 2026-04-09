@@ -75,6 +75,21 @@ func TestCharDiff(t *testing.T) {
 			added:          []byte("changed\n"),
 			wantHasChanged: true,
 		},
+		{
+			// Regression: invalid UTF-8 on the added side must not corrupt the join invariant.
+			// \xe2 is the start of a 3-byte sequence with no continuation bytes.
+			name:           "invalid UTF-8 in added side",
+			removed:        []byte("0"),
+			added:          []byte("\xe2"),
+			wantHasChanged: true,
+		},
+		{
+			// Regression: invalid UTF-8 on the removed side.
+			name:           "invalid UTF-8 in removed side",
+			removed:        []byte("\xe2"),
+			added:          []byte("0"),
+			wantHasChanged: true,
+		},
 	}
 
 	for _, tt := range tests {

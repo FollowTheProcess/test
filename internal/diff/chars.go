@@ -35,6 +35,13 @@ func CharDiff(removed, added []byte) InlineChange {
 		addedCore = added[:len(added)-1]
 	}
 
+	// Fall back to whole-line diff for invalid UTF-8: converting invalid bytes
+	// to runes replaces them with U+FFFD, making it impossible to reconstruct
+	// the original bytes from the segments.
+	if !utf8.Valid(removedCore) || !utf8.Valid(addedCore) {
+		return fallback(removed, added)
+	}
+
 	oldRunes := []rune(string(removedCore))
 	newRunes := []rune(string(addedCore))
 

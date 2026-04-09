@@ -37,11 +37,32 @@ func TestRender(t *testing.T) {
 			want: "  unchanged\n",
 		},
 		{
-			name: "header line is cyan+bold",
+			name: "diff header line is bold no colour",
 			lines: []diff.Line{
 				{Kind: diff.KindHeader, Content: []byte("diff want got\n")},
 			},
-			want: (hue.Cyan | hue.Bold).Text("diff want got\n"),
+			want: hue.Bold.Text("diff want got\n"),
+		},
+		{
+			name: "--- header line is red",
+			lines: []diff.Line{
+				{Kind: diff.KindHeader, Content: []byte("--- want\n")},
+			},
+			want: hue.Red.Text("--- want\n"),
+		},
+		{
+			name: "+++ header line is green",
+			lines: []diff.Line{
+				{Kind: diff.KindHeader, Content: []byte("+++ got\n")},
+			},
+			want: hue.Green.Text("+++ got\n"),
+		},
+		{
+			name: "@@ hunk header is bold no colour",
+			lines: []diff.Line{
+				{Kind: diff.KindHeader, Content: []byte("@@ -1,1 +1,1 @@\n")},
+			},
+			want: hue.Bold.Text("@@ -1,1 +1,1 @@\n"),
 		},
 		{
 			name: "standalone removed line has red prefix and content",

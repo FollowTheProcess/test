@@ -5,11 +5,13 @@ import (
 )
 
 const (
-	styleHeader           = hue.Cyan | hue.Bold
+	styleHeaderBold       = hue.Bold
+	styleRemovedHeader    = hue.Red
+	styleAddedHeader      = hue.Green
 	styleRemovedLine      = hue.Red
 	styleAddedLine        = hue.Green
-	styleRemovedHighlight = hue.BrightRedBackground
-	styleAddedHighlight   = hue.BrightGreenBackground
+	styleRemovedHighlight = hue.Black | hue.Bold | hue.RedBackground
+	styleAddedHighlight   = hue.Black | hue.Bold | hue.GreenBackground
 )
 
 // Render formats a []Line as a colourised string suitable for terminal output.
@@ -27,7 +29,14 @@ func Render(lines []Line) string {
 
 		switch line.Kind {
 		case KindHeader:
-			buf = styleHeader.AppendText(buf, line.Content)
+			switch {
+			case len(line.Content) >= 3 && string(line.Content[:3]) == "---":
+				buf = styleRemovedHeader.AppendText(buf, line.Content)
+			case len(line.Content) >= 3 && string(line.Content[:3]) == "+++":
+				buf = styleAddedHeader.AppendText(buf, line.Content)
+			default:
+				buf = styleHeaderBold.AppendText(buf, line.Content)
+			}
 			i++
 
 		case KindContext:

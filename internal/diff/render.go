@@ -37,6 +37,7 @@ func Render(lines []Line) string {
 			default:
 				buf = styleHeaderBold.AppendText(buf, line.Content)
 			}
+
 			i++
 
 		case KindContext:

@@ -86,8 +86,8 @@ func TestRender(t *testing.T) {
 				{Kind: diff.KindRemoved, Content: []byte("old\n")},
 				{Kind: diff.KindAdded, Content: []byte("new\n")},
 			},
-			want: hue.Red.Text("- ") + hue.BrightRedBackground.Text("old") + hue.Red.Text("\n") +
-				hue.Green.Text("+ ") + hue.BrightGreenBackground.Text("new") + hue.Green.Text("\n"),
+			want: hue.Red.Text("- ") + (hue.Black | hue.Bold | hue.RedBackground).Text("old") + hue.Red.Text("\n") +
+				hue.Green.Text("+ ") + (hue.Black | hue.Bold | hue.GreenBackground).Text("new") + hue.Green.Text("\n"),
 		},
 		{
 			name: "mismatched count (2 removed, 1 added) uses whole-line colour with coloured prefixes",

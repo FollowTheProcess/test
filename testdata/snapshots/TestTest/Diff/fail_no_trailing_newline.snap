@@ -11,8 +11,8 @@ expression: buf.String()
   @@ -1,4 +1,4 @@
     Some
   - different stuff here in this file
-  - this line is different
   + stuff here in this file
+  - this line is different
   + lines as well wow
     some more stuff
 

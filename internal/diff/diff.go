@@ -1,12 +1,6 @@
-// Taken from Go's internal/diff with only very minor tweaks; those being:
-// - Adding an extra space between the diff character (+/-) and the line so we can easily colour it
-// - Lint ignores
-// - Renaming diff test package to diff_test
-//
-// Copyright 2022 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
+// Package diff originally derived from Go's internal/diff, but has since been
+// substantially extended to support structured line types, character-level inline
+// diff highlighting, and colourised terminal rendering.
 package diff
 
 import (
@@ -16,12 +10,57 @@ import (
 	"strings"
 )
 
+// LineKind identifies the role of a line in a diff.
+type LineKind int
+
+const (
+	KindContext LineKind = iota // unchanged context line
+	KindRemoved                 // line present only in old
+	KindAdded                   // line present only in new
+	KindHeader                  // "diff …", "--- …", "+++ …", "@@ … @@"
+)
+
+// String returns the name of the LineKind constant, suitable for use in test failure messages.
+func (k LineKind) String() string {
+	switch k {
+	case KindContext:
+		return "KindContext"
+	case KindRemoved:
+		return "KindRemoved"
+	case KindAdded:
+		return "KindAdded"
+	case KindHeader:
+		return "KindHeader"
+	default:
+		return fmt.Sprintf("LineKind(%d)", int(k))
+	}
+}
+
+// Line is a single structured line from a diff.
+// Content holds the line text WITHOUT the leading diff prefix ("- "/"+ "/"  ").
+// For KindHeader lines, Content holds the full raw line (including its newline).
+type Line struct {
+	Content []byte
+	Kind    LineKind
+}
+
 // A pair is a pair of values tracked for both the x and y side of a diff.
 // It is typically a pair of line indexes.
 type pair struct{ x, y int }
 
+// Lines returns the structured diff lines for old and newText.
+// Returns nil if old and newText are identical.
+// Uses the same anchored diff algorithm as [Diff].
+func Lines(oldName string, old []byte, newName string, newText []byte) []Line {
+	if bytes.Equal(old, newText) {
+		return nil
+	}
+
+	return computeLines(oldName, old, newName, newText)
+}
+
 // Diff returns an anchored diff of the two texts old and new
-// in the “unified diff” format. If old and new are identical,
+// in the "unified diff" format. If old and new are identical,
 // Diff returns a nil slice (no output).
 //
 // Unix diff implementations typically look for a diff with
@@ -32,17 +71,17 @@ type pair struct{ x, y int }
 // after a predetermined amount of work.
 //
 // In contrast, this implementation looks for a diff with the
-// smallest number of “unique” lines inserted and removed,
+// smallest number of "unique" lines inserted and removed,
 // where unique means a line that appears just once in both old and new.
-// We call this an “anchored diff” because the unique lines anchor
+// We call this an "anchored diff" because the unique lines anchor
 // the chosen matching regions. An anchored diff is usually clearer
 // than a standard diff, because the algorithm does not try to
 // reuse unrelated blank lines or closing braces.
 // The algorithm also guarantees to run in O(n log n) time
 // instead of the standard O(n²) time.
 //
-// Some systems call this approach a “patience diff,” named for
-// the “patience sorting” algorithm, itself named for a solitaire card game.
+// Some systems call this approach a "patience diff," named for
+// the "patience sorting" algorithm, itself named for a solitaire card game.
 // We avoid that name for two reasons. First, the name has been used
 // for a few different variants of the algorithm, so it is imprecise.
 // Second, the name is frequently interpreted as meaning that you have
@@ -52,21 +91,49 @@ func Diff(
 	oldName string,
 	old []byte,
 	newName string,
-	new []byte,
+	newText []byte,
 ) []byte {
-	if bytes.Equal(old, new) {
+	if bytes.Equal(old, newText) {
 		return nil
 	}
 
-	x := lines(old)
-	y := lines(new)
+	structured := computeLines(oldName, old, newName, newText)
 
-	// Print diff header.
 	var out bytes.Buffer
 
-	fmt.Fprintf(&out, "diff %s %s\n", oldName, newName)
-	fmt.Fprintf(&out, "--- %s\n", oldName)
-	fmt.Fprintf(&out, "+++ %s\n", newName)
+	for _, line := range structured {
+		switch line.Kind {
+		case KindHeader:
+			out.Write(line.Content)
+		case KindRemoved:
+			out.WriteString("- ")
+			out.Write(line.Content)
+		case KindAdded:
+			out.WriteString("+ ")
+			out.Write(line.Content)
+		case KindContext:
+			out.WriteString("  ")
+			out.Write(line.Content)
+		default:
+			// no action for unknown line kinds
+		}
+	}
+
+	return out.Bytes()
+}
+
+// computeLines computes structured diff lines for old and newText (assumed non-equal).
+func computeLines(oldName string, old []byte, newName string, newText []byte) []Line {
+	x := splitLines(old)
+	y := splitLines(newText)
+
+	var result []Line
+
+	result = append(result,
+		Line{Kind: KindHeader, Content: fmt.Appendf(nil, "diff %s %s\n", oldName, newName)},
+		Line{Kind: KindHeader, Content: fmt.Appendf(nil, "--- %s\n", oldName)},
+		Line{Kind: KindHeader, Content: fmt.Appendf(nil, "+++ %s\n", newName)},
+	)
 
 	// Loop over matches to consider,
 	// expanding each match to include surrounding lines,
@@ -75,11 +142,14 @@ func Diff(
 	// tgs returns a leading {0,0} and trailing {len(x), len(y)} pair
 	// in the sequence of matches.
 	var (
-		done  pair     // printed up to x[:done.x] and y[:done.y]
-		chunk pair     // start lines of current chunk
-		count pair     // number of lines from each side in current chunk
-		ctext []string // lines for current chunk
+		done  pair   // printed up to x[:done.x] and y[:done.y]
+		chunk pair   // start lines of current chunk
+		count pair   // number of lines from each side in current chunk
+		ctext []Line // lines for current chunk
 	)
+
+	// contextLines is the number of unchanged lines to show around each diff hunk.
+	const contextLines = 3
 
 	for _, m := range tgs(x, y) {
 		if m.x < done.x {
@@ -87,41 +157,26 @@ func Diff(
 			continue
 		}
 
-		// Expand matching lines as far possible,
-		// establishing that x[start.x:end.x] == y[start.y:end.y].
-		// Note that on the first (or last) iteration we may (or definitey do)
-		// have an empty match: start.x==end.x and start.y==end.y.
-		start := m
-		for start.x > done.x && start.y > done.y && x[start.x-1] == y[start.y-1] {
-			start.x--
-			start.y--
-		}
-
-		end := m
-		for end.x < len(x) && end.y < len(y) && x[end.x] == y[end.y] {
-			end.x++
-			end.y++
-		}
+		start, end := expandMatch(m, done, x, y)
 
 		// Emit the mismatched lines before start into this chunk.
 		// (No effect on first sentinel iteration, when start = {0,0}.)
 		for _, s := range x[done.x:start.x] {
-			ctext = append(ctext, "- "+s)
+			ctext = append(ctext, Line{Kind: KindRemoved, Content: []byte(s)})
 			count.x++
 		}
 
 		for _, s := range y[done.y:start.y] {
-			ctext = append(ctext, "+ "+s)
+			ctext = append(ctext, Line{Kind: KindAdded, Content: []byte(s)})
 			count.y++
 		}
 
 		// If we're not at EOF and have too few common lines,
 		// the chunk includes all the common lines and continues.
-		const C = 3 // number of context lines
 		if (end.x < len(x) || end.y < len(y)) &&
-			(end.x-start.x < C || (len(ctext) > 0 && end.x-start.x < 2*C)) {
+			(end.x-start.x < contextLines || (len(ctext) > 0 && end.x-start.x < 2*contextLines)) {
 			for _, s := range x[start.x:end.x] {
-				ctext = append(ctext, "  "+s)
+				ctext = append(ctext, Line{Kind: KindContext, Content: []byte(s)})
 				count.x++
 				count.y++
 			}
@@ -133,35 +188,18 @@ func Diff(
 
 		// End chunk with common lines for context.
 		if len(ctext) > 0 {
-			n := end.x - start.x
-			if n > C {
-				n = C
-			}
+			n := min(end.x-start.x, contextLines)
 
 			for _, s := range x[start.x : start.x+n] {
-				ctext = append(ctext, "  "+s)
+				ctext = append(ctext, Line{Kind: KindContext, Content: []byte(s)})
 				count.x++
 				count.y++
 			}
 
 			done = pair{start.x + n, start.y + n}
 
-			// Format and emit chunk.
-			// Convert line numbers to 1-indexed.
-			// Special case: empty file shows up as 0,0 not 1,0.
-			if count.x > 0 {
-				chunk.x++
-			}
-
-			if count.y > 0 {
-				chunk.y++
-			}
-
-			fmt.Fprintf(&out, "@@ -%d,%d +%d,%d @@\n", chunk.x, count.x, chunk.y, count.y)
-
-			for _, s := range ctext {
-				out.WriteString(s)
-			}
+			result = append(result, chunkHeader(chunk, count))
+			result = append(result, ctext...)
 
 			count.x = 0
 			count.y = 0
@@ -174,9 +212,9 @@ func Diff(
 		}
 
 		// Otherwise start a new chunk.
-		chunk = pair{end.x - C, end.y - C}
+		chunk = pair{end.x - contextLines, end.y - contextLines}
 		for _, s := range x[chunk.x:end.x] {
-			ctext = append(ctext, "  "+s)
+			ctext = append(ctext, Line{Kind: KindContext, Content: []byte(s)})
 			count.x++
 			count.y++
 		}
@@ -184,13 +222,49 @@ func Diff(
 		done = end
 	}
 
-	return out.Bytes()
+	return result
 }
 
-// lines returns the lines in the file x, including newlines.
+// expandMatch expands a match region backward to start and forward to end
+// while adjacent lines in x and y also match.
+func expandMatch(m, done pair, x, y []string) (start, end pair) {
+	start = m
+	for start.x > done.x && start.y > done.y && x[start.x-1] == y[start.y-1] {
+		start.x--
+		start.y--
+	}
+
+	end = m
+	for end.x < len(x) && end.y < len(y) && x[end.x] == y[end.y] {
+		end.x++
+		end.y++
+	}
+
+	return start, end
+}
+
+// chunkHeader formats the @@ header line for a diff chunk.
+// chunk is the 0-indexed start of the chunk; count is the number of lines on each side.
+func chunkHeader(chunk, count pair) Line {
+	x, y := chunk.x, chunk.y
+	if count.x > 0 {
+		x++
+	}
+
+	if count.y > 0 {
+		y++
+	}
+
+	return Line{
+		Kind:    KindHeader,
+		Content: fmt.Appendf(nil, "@@ -%d,%d +%d,%d @@\n", x, count.x, y, count.y),
+	}
+}
+
+// splitLines returns the lines in the file x, including newlines.
 // If the file does not end in a newline, one is supplied
 // along with a warning about the missing newline.
-func lines(x []byte) []string {
+func splitLines(x []byte) []string {
 	l := strings.SplitAfter(string(x), "\n")
 	if l[len(l)-1] == "" {
 		l = l[:len(l)-1]
@@ -208,8 +282,8 @@ func lines(x []byte) []string {
 // once in x and once in y.
 //
 // The longest common subsequence algorithm is as described in
-// Thomas G. Szymanski, “A Special Case of the Maximal Common
-// Subsequence Problem,” Princeton TR #170 (January 1975),
+// Thomas G. Szymanski, "A Special Case of the Maximal Common
+// Subsequence Problem," Princeton TR #170 (January 1975),
 // available at https://research.swtch.com/tgs170.pdf.
 func tgs(x, y []string) []pair {
 	// Count the number of times each string appears in a and b.
@@ -255,25 +329,25 @@ func tgs(x, y []string) []pair {
 	// In those terms, A = J = inv and B = [0, n).
 	// We add sentinel pairs {0,0}, and {len(x),len(y)}
 	// to the returned sequence, to help the processing loop.
-	J := inv
+	j := inv
 	n := len(xi)
-	T := make([]int, n)
-	L := make([]int, n)
+	tails := make([]int, n)
+	lengths := make([]int, n)
 
-	for i := range T {
-		T[i] = n + 1
+	for i := range tails {
+		tails[i] = n + 1
 	}
 
 	for i := range n {
 		k := sort.Search(n, func(k int) bool {
-			return T[k] >= J[i]
+			return tails[k] >= j[i]
 		})
-		T[k] = J[i]
-		L[i] = k + 1
+		tails[k] = j[i]
+		lengths[i] = k + 1
 	}
 
 	k := 0
-	for _, v := range L {
+	for _, v := range lengths {
 		if k < v {
 			k = v
 		}
@@ -284,8 +358,8 @@ func tgs(x, y []string) []pair {
 
 	lastj := n
 	for i := n - 1; i >= 0; i-- {
-		if L[i] == k && J[i] < lastj {
-			seq[k] = pair{xi[i], yi[J[i]]}
+		if lengths[i] == k && j[i] < lastj {
+			seq[k] = pair{xi[i], yi[j[i]]}
 			k--
 		}
 	}

@@ -43,7 +43,7 @@ linters:
     - varnamelen # Lots of false positives of things that are fine
     - wrapcheck # Not every error must be wrapped
     - wsl # Very aggressive, some of this I like but tend to do anyway
-    - wsl_v5 # As above, just newer version
+    - mnd # Magic numbers are fine, context makes them clear
 
   exclusions:
     presets:
@@ -57,9 +57,6 @@ linters:
           - prealloc # These kinds of optimisations will make no difference to test code
           - gosec # Tests don't need security stuff
           - goconst # Nah
-
-    paths:
-      - internal/diff
 
   settings:
     cyclop:

@@ -11,18 +11,11 @@ import (
 	"io"
 	"math"
 	"os"
-	"strings"
 	"sync"
 	"testing"
 
 	"go.followtheprocess.codes/hue"
 	"go.followtheprocess.codes/test/internal/diff"
-)
-
-const (
-	header = hue.Cyan | hue.Bold
-	green  = hue.Green
-	red    = hue.Red
 )
 
 // ColorEnabled sets whether the output from this package is colourised.
@@ -386,8 +379,8 @@ func DiffBytes(tb testing.TB, got, want []byte) {
 	got = fixNL(got)
 	want = fixNL(want)
 
-	if diff := diff.Diff("want", want, "got", got); diff != nil {
-		tb.Fatalf("\nDiff\n----\n%s\n", prettyDiff(string(diff)))
+	if lines := diff.Lines("want", want, "got", got); lines != nil {
+		tb.Fatalf("\nDiff\n----\n%s\n", diff.Render(lines))
 	}
 }
 
@@ -467,6 +460,7 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 		defer func() {
 			close(stdoutCapture)
 		}()
+
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
@@ -479,6 +473,7 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 		defer func() {
 			close(stderrCapture)
 		}()
+
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stderrReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
@@ -511,33 +506,13 @@ func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 	return capturedStdout, capturedStderr
 }
 
-// prettyDiff takes a string diff in unified diff format and colourises it for easier viewing.
-func prettyDiff(diff string) string {
-	lines := strings.Split(diff, "\n")
-	for i := range lines {
-		trimmed := strings.TrimSpace(lines[i])
-		if strings.HasPrefix(trimmed, "---") || strings.HasPrefix(trimmed, "- ") {
-			lines[i] = red.Text(lines[i])
-		}
-
-		if strings.HasPrefix(trimmed, "@@") {
-			lines[i] = header.Text(lines[i])
-		}
-
-		if strings.HasPrefix(trimmed, "+++") || strings.HasPrefix(trimmed, "+ ") {
-			lines[i] = green.Text(lines[i])
-		}
-	}
-
-	return strings.Join(lines, "\n")
-}
-
 // If data is empty or ends in \n, fixNL returns data.
 // Otherwise fixNL returns a new slice consisting of data with a final \n added.
 func fixNL(data []byte) []byte {
 	if len(data) == 0 || data[len(data)-1] == '\n' {
 		return data
 	}
+
 	d := make([]byte, len(data)+1)
 	copy(d, data)
 	d[len(data)] = '\n'

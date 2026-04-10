@@ -5,7 +5,7 @@ go 1.26
 require (
 	go.followtheprocess.codes/hue v1.1.0
 	go.followtheprocess.codes/snapshot v0.9.1
-	golang.org/x/tools v0.43.0
+	golang.org/x/tools v0.44.0
 )
 
 require (

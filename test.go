@@ -14,8 +14,9 @@ import (
 	"sync"
 	"testing"
 
+	"go.followtheprocess.codes/diff"
+	"go.followtheprocess.codes/diff/render"
 	"go.followtheprocess.codes/hue"
-	"go.followtheprocess.codes/test/internal/diff"
 )
 
 // ColorEnabled sets whether the output from this package is colourised.
@@ -380,7 +381,7 @@ func DiffBytes(tb testing.TB, got, want []byte) {
 	want = fixNL(want)
 
 	if lines := diff.Lines("want", want, "got", got); lines != nil {
-		tb.Fatalf("\nDiff\n----\n%s\n", diff.Render(lines))
+		tb.Fatalf("\nDiff\n----\n%s\n", render.Render(lines))
 	}
 }
 
@@ -401,9 +402,6 @@ func DiffReader(tb testing.TB, got, want io.Reader) {
 	if err != nil {
 		tb.Fatalf("DiffReader: could not read from want: %v\n", err)
 	}
-
-	gotData = fixNL(gotData)
-	wantData = fixNL(wantData)
 
 	DiffBytes(tb, gotData, wantData)
 }

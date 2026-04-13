@@ -380,8 +380,10 @@ func DiffBytes(tb testing.TB, got, want []byte) {
 	got = fixNL(got)
 	want = fixNL(want)
 
-	if lines := diff.Lines("want", want, "got", got); lines != nil {
-		tb.Fatalf("\nDiff\n----\n%s\n", render.Render(lines))
+	d := diff.New("want", want, "got", got)
+
+	if !d.Equal() {
+		tb.Fatalf("\nDiff\n----\n%s\n", render.Render(d))
 	}
 }
 

@@ -7,6 +7,6 @@ expression: buf.String()
   -------
 
   Got:	<nil>
-  Wanted:	error
+  Wanted:	<any error>
 
   Because: Wanted an error but got <nil>

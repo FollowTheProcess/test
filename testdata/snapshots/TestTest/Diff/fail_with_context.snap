@@ -16,3 +16,5 @@ expression: buf.String()
   - this line is different
   + lines as well wow
     some more stuff
+
+  (config file drifted from checked-in copy)

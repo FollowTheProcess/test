@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"slices"
 	"testing"
@@ -241,6 +242,34 @@ func TestTest(t *testing.T) {
 			wantFail: true,
 		},
 		{
+			name: "NotNearlyEqual/pass",
+			fn: func(tb testing.TB) {
+				test.NotNearlyEqual(tb, 3.0000001, 3.0)
+			},
+			wantFail: false,
+		},
+		{
+			name: "NotNearlyEqual/fail",
+			fn: func(tb testing.TB) {
+				test.NotNearlyEqual(tb, 3.0000000001, 3.0)
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotNearlyEqual/fail custom tolerance",
+			fn: func(tb testing.TB) {
+				test.NotNearlyEqual(tb, 3.05, 3.0, test.FloatEqualityThreshold(0.1))
+			},
+			wantFail: true,
+		},
+		{
+			name: "NotNearlyEqual/fail with context",
+			fn: func(tb testing.TB) {
+				test.NotNearlyEqual(tb, 3.0000000001, 3.0, test.Context("Numbers don't work that way"))
+			},
+			wantFail: true,
+		},
+		{
 			name: "Ok/pass",
 			fn: func(tb testing.TB) {
 				test.Ok(tb, nil)
@@ -468,6 +497,59 @@ func TestTest(t *testing.T) {
 				want := []byte("Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff\n")
 
 				test.DiffReader(tb, bytes.NewReader(got), bytes.NewReader(want))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Diff/fail with title",
+			fn: func(tb testing.TB) {
+				got := "Some\nstuff here in this file\nlines as well wow\nsome more stuff\n"
+				want := "Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff\n"
+				test.Diff(tb, got, want, test.Title("File drift"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Diff/fail with context",
+			fn: func(tb testing.TB) {
+				got := "Some\nstuff here in this file\nlines as well wow\nsome more stuff\n"
+				want := "Some\ndifferent stuff here in this file\nthis line is different\nsome more stuff\n"
+				test.Diff(tb, got, want, test.Context("config file drifted from checked-in copy"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Option errors/Title empty",
+			fn: func(tb testing.TB) {
+				test.Equal(tb, 1, 1, test.Title(""))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Option errors/Context empty",
+			fn: func(tb testing.TB) {
+				test.Equal(tb, 1, 1, test.Context(""))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Option errors/Context format resolves empty",
+			fn: func(tb testing.TB) {
+				test.Equal(tb, 1, 1, test.Context("%s", ""))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Option errors/FloatEqualityThreshold positive infinity",
+			fn: func(tb testing.TB) {
+				test.NearlyEqual(tb, 1.0, 1.0, test.FloatEqualityThreshold(math.Inf(1)))
+			},
+			wantFail: true,
+		},
+		{
+			name: "Option errors/FloatEqualityThreshold negative infinity",
+			fn: func(tb testing.TB) {
+				test.NearlyEqual(tb, 1.0, 1.0, test.FloatEqualityThreshold(math.Inf(-1)))
 			},
 			wantFail: true,
 		},

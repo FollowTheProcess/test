@@ -1,10 +1,11 @@
 source: test_test.go
 expression: buf.String()
 ---
-|+
+|
 
   Diff
   ----
+
   diff want got
   --- want
   +++ got
@@ -15,4 +16,3 @@ expression: buf.String()
   - this line is different
   + lines as well wow
     some more stuff
-

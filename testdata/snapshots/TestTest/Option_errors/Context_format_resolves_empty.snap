@@ -1,0 +1,4 @@
+source: test_test.go
+expression: buf.String()
+---
+'Equal: could not apply options: cannot set context to an empty string'

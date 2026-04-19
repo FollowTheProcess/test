@@ -197,6 +197,32 @@ func TestOutput(t *testing.T) {
 
 Under the hood `CaptureOutput` temporarily captures both streams, copies the data to a buffer and returns the output back to you, before cleaning everything back up again.
 
+### A note on `ErrorAs` and `errcheck`
+
+`test.ErrorAs[T]` returns the matched error so you can chain further assertions on its fields:
+
+```go
+got := test.ErrorAs[*os.PathError](t, err)
+test.Equal(t, got.Op, "open")
+```
+
+The return value is optional — discarding it is a supported pattern when you only want the type-check assertion:
+
+```go
+test.ErrorAs[*os.PathError](t, err) // pure type check, return ignored
+```
+
+If you lint with [`errcheck`] it will flag the discard because `T` is constrained to `error`. `errcheck`'s `exclude-functions` doesn't currently match generic instantiations, so the cleanest fix is a source-based exclusion in `.golangci.yml`:
+
+```yaml
+linters:
+  exclusions:
+    rules:
+      - source: 'test\.ErrorAs\['
+        linters:
+          - errcheck
+```
+
 ### See Also
 
 - [FollowTheProcess/snapshot] for golden file/snapshot testing 📸
@@ -205,6 +231,7 @@ Under the hood `CaptureOutput` temporarily captures both streams, copies the dat
 
 This package was created with [copier] and the [FollowTheProcess/go_copier] project template.
 
+[`errcheck`]: https://github.com/kisielk/errcheck
 [copier]: https://copier.readthedocs.io/en/stable/
 [FollowTheProcess/go_copier]: https://github.com/FollowTheProcess/go_copier
 [matryer/is]: https://github.com/matryer/is

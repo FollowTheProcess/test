@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|
+
+  Wrong Error Type
+  ----------------
+
+  Got:	*test_test.outputError: nope
+  Wanted:	error matching *test_test.inputError
+
+  (Expected an inputError)

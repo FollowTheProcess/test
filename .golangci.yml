@@ -58,6 +58,13 @@ linters:
           - gosec # Tests don't need security stuff
           - goconst # Nah
 
+      # test.ErrorAs returns the matched error for optional chained assertions;
+      # discarding it is a supported pattern. errcheck's exclude-functions
+      # doesn't currently match generic instantiations, so match by source instead.
+      - source: 'test\.ErrorAs\['
+        linters:
+          - errcheck
+
   settings:
     cyclop:
       max-complexity: 20

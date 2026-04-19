@@ -1,0 +1,10 @@
+source: test_test.go
+expression: buf.String()
+---
+|
+
+  Wrong Error Type
+  ----------------
+
+  Got:	<nil>
+  Wanted:	error matching *test_test.inputError

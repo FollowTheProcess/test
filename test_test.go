@@ -326,6 +326,104 @@ func TestTest(t *testing.T) {
 			wantFail: true,
 		},
 		{
+			name: "ErrorIs/pass",
+			fn: func(tb testing.TB) {
+				sentinel := errors.New("sentinel")
+				test.ErrorIs(tb, sentinel, sentinel)
+			},
+			wantFail: false,
+		},
+		{
+			name: "ErrorIs/pass wrapped",
+			fn: func(tb testing.TB) {
+				sentinel := errors.New("sentinel")
+				wrapped := fmt.Errorf("while frobnicating: %w", sentinel)
+				test.ErrorIs(tb, wrapped, sentinel)
+			},
+			wantFail: false,
+		},
+		{
+			name: "ErrorIs/fail",
+			fn: func(tb testing.TB) {
+				test.ErrorIs(tb, errors.New("bang"), errors.New("not bang"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "ErrorIs/fail nil",
+			fn: func(tb testing.TB) {
+				test.ErrorIs(tb, nil, errors.New("wanted this one"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "ErrorIs/fail with context",
+			fn: func(tb testing.TB) {
+				test.ErrorIs(tb, errors.New("bang"), errors.New("not bang"), test.Context("Expected the other error"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "ErrorIs/fail with title",
+			fn: func(tb testing.TB) {
+				test.ErrorIs(tb, errors.New("bang"), errors.New("not bang"), test.Title("Wrong one"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "ErrorAs/pass",
+			fn: func(tb testing.TB) {
+				boom := &inputError{msg: "boom"}
+
+				got := test.ErrorAs[*inputError](tb, boom)
+				if got != boom {
+					tb.Fatal("ErrorAs did not return the matched error")
+				}
+			},
+			wantFail: false,
+		},
+		{
+			name: "ErrorAs/pass wrapped",
+			fn: func(tb testing.TB) {
+				inner := &inputError{msg: "boom"}
+				wrapped := fmt.Errorf("while frobnicating: %w", inner)
+
+				got := test.ErrorAs[*inputError](tb, wrapped)
+				if got != inner {
+					tb.Fatal("ErrorAs did not return the wrapped error")
+				}
+			},
+			wantFail: false,
+		},
+		{
+			name: "ErrorAs/fail",
+			fn: func(tb testing.TB) {
+				test.ErrorAs[*inputError](tb, &outputError{msg: "nope"})
+			},
+			wantFail: true,
+		},
+		{
+			name: "ErrorAs/fail nil",
+			fn: func(tb testing.TB) {
+				test.ErrorAs[*inputError](tb, nil)
+			},
+			wantFail: true,
+		},
+		{
+			name: "ErrorAs/fail with context",
+			fn: func(tb testing.TB) {
+				test.ErrorAs[*inputError](tb, &outputError{msg: "nope"}, test.Context("Expected an inputError"))
+			},
+			wantFail: true,
+		},
+		{
+			name: "ErrorAs/fail with title",
+			fn: func(tb testing.TB) {
+				test.ErrorAs[*inputError](tb, &outputError{msg: "nope"}, test.Title("Type mismatch"))
+			},
+			wantFail: true,
+		},
+		{
 			name: "WantErr/pass error",
 			fn: func(tb testing.TB) {
 				test.WantErr(tb, errors.New("bang"), true) // Wanted an error and got one - should pass
@@ -621,3 +719,14 @@ func TestCapture(t *testing.T) {
 		test.Equal(t, stderr, "")
 	})
 }
+
+// inputError is a concrete error type used to exercise test.ErrorAs.
+type inputError struct{ msg string }
+
+func (e *inputError) Error() string { return e.msg }
+
+// outputError is an unrelated concrete error type used to exercise the
+// "wrong type" failure path of test.ErrorAs.
+type outputError struct{ msg string }
+
+func (e *outputError) Error() string { return e.msg }

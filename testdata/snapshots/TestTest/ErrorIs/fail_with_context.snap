@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|
+
+  Wrong Error
+  -----------
+
+  Got:	bang
+  Wanted:	not bang
+
+  (Expected the other error)

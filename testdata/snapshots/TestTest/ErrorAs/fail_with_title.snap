@@ -1,0 +1,10 @@
+source: test_test.go
+expression: buf.String()
+---
+|
+
+  Type mismatch
+  -------------
+
+  Got:	*test_test.outputError: nope
+  Wanted:	error matching *test_test.inputError

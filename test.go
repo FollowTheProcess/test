@@ -11,6 +11,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -298,6 +299,85 @@ func Err(tb testing.TB, err error, options ...Option) {
 		}
 		tb.Fatal(fail.String())
 	}
+}
+
+// ErrorIs fails if err does not match target as reported by [errors.Is].
+//
+//	var ErrMadeUp = errors.New("made up error")
+//	test.ErrorIs(t, err, ErrMadeUp)
+func ErrorIs(tb testing.TB, err, target error, options ...Option) {
+	tb.Helper()
+
+	cfg := defaultConfig()
+	cfg.title = "Wrong Error"
+
+	for _, option := range options {
+		if optionErr := option.apply(&cfg); optionErr != nil {
+			tb.Fatalf("ErrorIs: could not apply options: %v", optionErr)
+
+			return
+		}
+	}
+
+	if !errors.Is(err, target) {
+		fail := failure[error]{
+			got:  err,
+			want: target,
+			cfg:  cfg,
+		}
+		tb.Fatal(fail.String())
+	}
+}
+
+// ErrorAs asserts that err or some error in its chain matches the concrete
+// type T as reported by [errors.AsType], and returns the matched error so
+// the caller can make further assertions on its fields without having to
+// unwrap it a second time. The return value may be ignored.
+//
+// Discard the return when you only care about the type check:
+//
+//	test.ErrorAs[*os.PathError](t, err)
+//
+// Or bind it to drill into the matched error:
+//
+//	got := test.ErrorAs[*os.PathError](t, err)
+//	test.Equal(t, got.Op, "open")
+//	test.Equal(t, got.Path, "/does/not/exist")
+func ErrorAs[T error](tb testing.TB, err error, options ...Option) T {
+	tb.Helper()
+
+	cfg := defaultConfig()
+	cfg.title = "Wrong Error Type"
+
+	for _, option := range options {
+		if optionErr := option.apply(&cfg); optionErr != nil {
+			tb.Fatalf("ErrorAs: could not apply options: %v", optionErr)
+
+			var zero T
+
+			return zero
+		}
+	}
+
+	if target, ok := errors.AsType[T](err); ok {
+		return target
+	}
+
+	got := "<nil>"
+	if err != nil {
+		got = fmt.Sprintf("%T: %s", err, err.Error())
+	}
+
+	fail := failure[string]{
+		got:  got,
+		want: fmt.Sprintf("error matching %s", reflect.TypeFor[T]()),
+		cfg:  cfg,
+	}
+	tb.Fatal(fail.String())
+
+	var zero T
+
+	return zero
 }
 
 // WantErr fails if you got an error and didn't want it, or if you didn't

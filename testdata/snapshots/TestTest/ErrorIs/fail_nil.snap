@@ -1,0 +1,10 @@
+source: test_test.go
+expression: buf.String()
+---
+|
+
+  Wrong Error
+  -----------
+
+  Got:	<nil>
+  Wanted:	wanted this one

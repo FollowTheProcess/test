@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|
+
+  NearlyEqual
+  -----------
+
+  Got:	3.0000000001
+  Wanted:	3
+
+  Because: Difference 3.0000000001 - 3 = 1.000000082740371e-10 is within tolerance of 1e-08

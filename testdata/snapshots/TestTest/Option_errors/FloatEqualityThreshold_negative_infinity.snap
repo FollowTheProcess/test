@@ -1,0 +1,4 @@
+source: test_test.go
+expression: buf.String()
+---
+'NearlyEqual: could not apply options: cannot set floating point equality threshold to ±infinity'

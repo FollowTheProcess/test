@@ -3,8 +3,8 @@ expression: buf.String()
 ---
 |
 
-  Diff
-  ----
+  File drift
+  ----------
 
   diff want got
   --- want

@@ -7,6 +7,6 @@ expression: buf.String()
   -------
 
   Got:	<nil>
-  Wanted:	error
+  Wanted:	<any error>
 
   (Frobnicated the baz when it should have failed)

@@ -1,0 +1,12 @@
+source: test_test.go
+expression: buf.String()
+---
+|
+
+  NearlyEqual
+  -----------
+
+  Got:	3.05
+  Wanted:	3
+
+  Because: Difference 3.05 - 3 = 0.04999999999999982 is within tolerance of 0.1

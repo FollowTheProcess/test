@@ -11,13 +11,18 @@ import (
 	"io"
 	"math"
 	"os"
-	"sync"
+	"strings"
 	"testing"
 
 	"go.followtheprocess.codes/diff"
 	"go.followtheprocess.codes/diff/render"
 	"go.followtheprocess.codes/hue"
 )
+
+// errAny is a sentinel rendered in failure output when the caller expected
+// an error but got nil — it reads more naturally than the previous
+// placeholder errors.New("error") (which printed "Wanted: error").
+var errAny = errors.New("<any error>")
 
 // ColorEnabled sets whether the output from this package is colourised.
 //
@@ -125,7 +130,7 @@ func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, optio
 	}
 }
 
-// NotEqualFunc is like [Equal] but accepts a custom comparator function, useful
+// NotEqualFunc is like [NotEqual] but accepts a custom comparator function, useful
 // when the items to be compared do not implement the comparable generic constraint.
 //
 // The signature of the comparator is such that standard library functions such as
@@ -133,8 +138,8 @@ func EqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, optio
 //
 // The comparator should return true if the two items should be considered equal.
 //
-//	test.EqualFunc(t, []int{1, 2, 3}, []int{1, 2, 3}, slices.Equal) // Fails
-//	test.EqualFunc(t, []int{1, 2, 3}, []int{4, 5, 6}, slices.Equal) // Passes
+//	test.NotEqualFunc(t, []int{1, 2, 3}, []int{1, 2, 3}, slices.Equal) // Fails
+//	test.NotEqualFunc(t, []int{1, 2, 3}, []int{4, 5, 6}, slices.Equal) // Passes
 func NotEqualFunc[T any](tb testing.TB, got, want T, equal func(a, b T) bool, options ...Option) {
 	tb.Helper()
 
@@ -181,13 +186,53 @@ func NearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T, options ...O
 		}
 	}
 
-	diff := math.Abs(float64(got - want))
-	if diff > cfg.floatEqualityThreshold {
+	delta := math.Abs(float64(got - want))
+	if delta > cfg.floatEqualityThreshold {
 		cfg.reason = fmt.Sprintf(
 			"Difference %v - %v = %v exceeds maximum tolerance of %v",
 			got,
 			want,
-			diff,
+			delta,
+			cfg.floatEqualityThreshold,
+		)
+		fail := failure[T]{
+			got:  got,
+			want: want,
+			cfg:  cfg,
+		}
+		tb.Fatal(fail.String())
+	}
+}
+
+// NotNearlyEqual is the opposite of [NearlyEqual]. It fails when got and want
+// are within the float equality threshold of each other.
+//
+// The threshold defaults to 1e-8 and can be configured with the
+// [FloatEqualityThreshold] option.
+//
+//	test.NotNearlyEqual(t, 3.0000001, 3.0) // Passes, different enough
+//	test.NotNearlyEqual(t, 3.0000000001, 3.0) // Fails, too close to be considered different
+func NotNearlyEqual[T ~float32 | ~float64](tb testing.TB, got, want T, options ...Option) {
+	tb.Helper()
+
+	cfg := defaultConfig()
+	cfg.title = "NearlyEqual"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("NotNearlyEqual: could not apply options: %v", err)
+
+			return
+		}
+	}
+
+	delta := math.Abs(float64(got - want))
+	if delta <= cfg.floatEqualityThreshold {
+		cfg.reason = fmt.Sprintf(
+			"Difference %v - %v = %v is within tolerance of %v",
+			got,
+			want,
+			delta,
 			cfg.floatEqualityThreshold,
 		)
 		fail := failure[T]{
@@ -248,7 +293,7 @@ func Err(tb testing.TB, err error, options ...Option) {
 	if err == nil {
 		fail := failure[error]{
 			got:  nil,
-			want: errors.New("error"),
+			want: errAny,
 			cfg:  cfg,
 		}
 		tb.Fatal(fail.String())
@@ -287,7 +332,7 @@ func WantErr(tb testing.TB, err error, want bool, options ...Option) {
 
 		if want {
 			reason = fmt.Sprintf("Wanted an error but got %v", err)
-			wanted = errors.New("error")
+			wanted = errAny
 		} else {
 			reason = fmt.Sprintf("Got an unexpected error: %v", err)
 			wanted = nil
@@ -364,9 +409,9 @@ func False(tb testing.TB, got bool, options ...Option) {
 //
 // If either got or want do not end in a newline, one is added to avoid a
 // "No newline at end of file" warning in the diff which is visually distracting.
-func Diff(tb testing.TB, got, want string) {
+func Diff(tb testing.TB, got, want string, options ...Option) {
 	tb.Helper()
-	DiffBytes(tb, []byte(got), []byte(want))
+	DiffBytes(tb, []byte(got), []byte(want), options...)
 }
 
 // DiffBytes fails if the two []byte got and want are not equal and provides a rich
@@ -374,8 +419,19 @@ func Diff(tb testing.TB, got, want string) {
 //
 // If either got or want do not end in a newline, one is added to avoid a
 // "No newline at end of file" warning in the diff which is visually distracting.
-func DiffBytes(tb testing.TB, got, want []byte) {
+func DiffBytes(tb testing.TB, got, want []byte, options ...Option) {
 	tb.Helper()
+
+	cfg := defaultConfig()
+	cfg.title = "Diff"
+
+	for _, option := range options {
+		if err := option.apply(&cfg); err != nil {
+			tb.Fatalf("DiffBytes: could not apply options: %v", err)
+
+			return
+		}
+	}
 
 	got = fixNL(got)
 	want = fixNL(want)
@@ -383,7 +439,11 @@ func DiffBytes(tb testing.TB, got, want []byte) {
 	d := diff.New("want", want, "got", got)
 
 	if !d.Equal() {
-		tb.Fatalf("\nDiff\n----\n%s\n", render.Render(d))
+		s := &strings.Builder{}
+		cfg.writeHeader(s)
+		s.Write(render.Render(d))
+		cfg.writeFooter(s)
+		tb.Fatal(s.String())
 	}
 }
 
@@ -392,20 +452,20 @@ func DiffBytes(tb testing.TB, got, want []byte) {
 //
 // If either got or want do not end in a newline, one is added to avoid
 // a "No newline at end of file" warning in the diff which is visually distracting.
-func DiffReader(tb testing.TB, got, want io.Reader) {
+func DiffReader(tb testing.TB, got, want io.Reader, options ...Option) {
 	tb.Helper()
 
 	gotData, err := io.ReadAll(got)
 	if err != nil {
-		tb.Fatalf("DiffReader: could not read from got: %v\n", err)
+		tb.Fatalf("DiffReader: could not read from got: %v", err)
 	}
 
 	wantData, err := io.ReadAll(want)
 	if err != nil {
-		tb.Fatalf("DiffReader: could not read from want: %v\n", err)
+		tb.Fatalf("DiffReader: could not read from want: %v", err)
 	}
 
-	DiffBytes(tb, gotData, wantData)
+	DiffBytes(tb, gotData, wantData, options...)
 }
 
 // CaptureOutput captures and returns data printed to [os.Stdout] and [os.Stderr] by the provided function fn, allowing
@@ -414,6 +474,9 @@ func DiffReader(tb testing.TB, got, want io.Reader) {
 // If the provided function returns a non nil error, the test is failed with the error logged as the reason.
 //
 // If any error occurs capturing stdout or stderr, the test will also be failed with a descriptive log.
+//
+// CaptureOutput replaces the process-wide [os.Stdout] and [os.Stderr] for the duration of the call,
+// so it is NOT safe to use from tests marked with [testing.T.Parallel].
 //
 //	fn := func() error {
 //		fmt.Println("hello stdout")
@@ -426,84 +489,88 @@ func DiffReader(tb testing.TB, got, want io.Reader) {
 func CaptureOutput(tb testing.TB, fn func() error) (stdout, stderr string) {
 	tb.Helper()
 
-	// Take copies of the original streams
 	oldStdout := os.Stdout
 	oldStderr := os.Stderr
-
-	defer func() {
-		// Restore everything back to normal
-		os.Stdout = oldStdout
-		os.Stderr = oldStderr
-	}()
 
 	stdoutReader, stdoutWriter, err := os.Pipe()
 	if err != nil {
 		tb.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
+
+		return "", ""
 	}
 
 	stderrReader, stderrWriter, err := os.Pipe()
 	if err != nil {
+		stdoutReader.Close()
+		stdoutWriter.Close()
 		tb.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
+
+		return "", ""
 	}
 
-	// Set stdout and stderr streams to the pipe writers
 	os.Stdout = stdoutWriter
 	os.Stderr = stderrWriter
 
-	stdoutCapture := make(chan string)
-	stderrCapture := make(chan string)
+	// Buffered so the copy goroutines can always deliver their result, even if
+	// the main goroutine exits early via Fatalf / runtime.Goexit / panic.
+	stdoutCapture := make(chan string, 1)
+	stderrCapture := make(chan string, 1)
 
-	var wg sync.WaitGroup
+	// Goroutines use Errorf rather than Fatalf — the testing contract says
+	// FailNow/Fatal* must only be called from the main test goroutine.
+	go copyInto(tb, "stdout", stdoutReader, stdoutCapture)
+	go copyInto(tb, "stderr", stderrReader, stderrCapture)
 
-	// Copy in goroutines to avoid blocking
-	wg.Go(func() {
-		defer func() {
-			close(stdoutCapture)
-		}()
-
-		buf := &bytes.Buffer{}
-		if _, err := io.Copy(buf, stdoutReader); err != nil {
-			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
+	// Ensure the real streams are restored and the pipe writers are closed on
+	// every exit path (including panic / Goexit). Closing the writers lets the
+	// copy goroutines see EOF and deliver their buffers to the channels.
+	writersClosed := false
+	closeWriters := func() {
+		if writersClosed {
+			return
 		}
 
-		stdoutCapture <- buf.String()
-	})
+		writersClosed = true
 
-	wg.Go(func() {
-		defer func() {
-			close(stderrCapture)
-		}()
-
-		buf := &bytes.Buffer{}
-		if _, err := io.Copy(buf, stderrReader); err != nil {
-			tb.Fatalf("CaptureOutput: failed to copy from stderr reader: %v", err)
-		}
-
-		stderrCapture <- buf.String()
-	})
-
-	// Call the test function that produces the output
-	if err := fn(); err != nil {
-		tb.Fatalf("CaptureOutput: user function returned an error: %v", err)
+		stdoutWriter.Close()
+		stderrWriter.Close()
 	}
 
-	// Close the writers
-	stdoutCloseErr := stdoutWriter.Close()
-	if stdoutCloseErr != nil {
-		tb.Fatalf("CaptureOutput: could not close stdout pipe: %v", stdoutCloseErr)
+	defer func() {
+		closeWriters()
+
+		os.Stdout = oldStdout
+		os.Stderr = oldStderr
+	}()
+
+	if fnErr := fn(); fnErr != nil {
+		tb.Fatalf("CaptureOutput: user function returned an error: %v", fnErr)
+
+		return "", ""
 	}
 
-	stderrCloseErr := stderrWriter.Close()
-	if stderrCloseErr != nil {
-		tb.Fatalf("CaptureOutput: could not close stderr pipe: %v", stderrCloseErr)
+	// Happy path: close writers now so we can receive the captured data before
+	// the defer runs (the defer's close is then a no-op).
+	closeWriters()
+
+	return <-stdoutCapture, <-stderrCapture
+}
+
+// copyInto reads from r into a buffer and sends the result on out. Any copy
+// error is reported against tb via Errorf — Fatal* is unsafe from non-main
+// goroutines. The send uses a buffered channel so it never blocks.
+func copyInto(tb testing.TB, name string, r io.Reader, out chan<- string) {
+	tb.Helper()
+
+	buf := &bytes.Buffer{}
+
+	defer func() {
+		out <- buf.String()
+	}()
+
+	if _, err := io.Copy(buf, r); err != nil {
+		tb.Errorf("CaptureOutput: failed to copy from %s reader: %v", name, err)
 	}
-
-	capturedStdout := <-stdoutCapture
-	capturedStderr := <-stderrCapture
-
-	wg.Wait()
-
-	return capturedStdout, capturedStderr
 }
 
 // If data is empty or ends in \n, fixNL returns data.

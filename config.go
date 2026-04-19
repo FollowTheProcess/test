@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -37,25 +38,35 @@ type failure[T any] struct {
 // String implements [fmt.Stringer] for failure, allowing it to print itself in the test log.
 func (f failure[T]) String() string {
 	s := &strings.Builder{}
-	s.WriteByte('\n')
-
-	s.WriteString(f.cfg.title)
-	s.WriteByte('\n')
-	s.WriteString(strings.Repeat("-", len(f.cfg.title)))
-	s.WriteString("\n\n")
+	f.cfg.writeHeader(s)
 
 	fmt.Fprintf(s, "Got:\t%+v\n", f.got)
 	fmt.Fprintf(s, "Wanted:\t%+v\n", f.want)
 
-	if f.cfg.context != "" {
-		fmt.Fprintf(s, "\n(%s)\n", f.cfg.context)
-	}
-
-	if f.cfg.reason != "" {
-		fmt.Fprintf(s, "\nBecause: %s\n", f.cfg.reason)
-	}
+	f.cfg.writeFooter(s)
 
 	return s.String()
+}
+
+// writeHeader writes the title block (leading blank line, title, underline, blank line)
+// to s. The underline is sized by rune count so multi-byte titles align correctly.
+func (c config) writeHeader(s *strings.Builder) {
+	s.WriteByte('\n')
+	s.WriteString(c.title)
+	s.WriteByte('\n')
+	s.WriteString(strings.Repeat("-", utf8.RuneCountInString(c.title)))
+	s.WriteString("\n\n")
+}
+
+// writeFooter writes any optional context and reason lines to s.
+func (c config) writeFooter(s *strings.Builder) {
+	if c.context != "" {
+		fmt.Fprintf(s, "\n(%s)\n", c.context)
+	}
+
+	if c.reason != "" {
+		fmt.Fprintf(s, "\nBecause: %s\n", c.reason)
+	}
 }
 
 // Option is a configuration option for a test.
@@ -79,7 +90,7 @@ func (o option) apply(cfg *config) error {
 // two floating point numbers before they are considered equal. This setting is only
 // used in [NearlyEqual] and [NotNearlyEqual].
 //
-// Setting threshold to ±math.Inf is an error and will fail the test.
+// Setting threshold to ±[math.Inf] is an error and will fail the test.
 //
 // The default is 1e-8, a sensible default for most cases.
 func FloatEqualityThreshold(threshold float64) Option {
@@ -137,12 +148,12 @@ func Title(title string) Option {
 //	test.Ok(t, err, test.Context("something complicated failed"))
 func Context(format string, args ...any) Option {
 	f := func(cfg *config) error {
-		if format == "" {
+		context := strings.TrimSpace(fmt.Sprintf(format, args...))
+		if context == "" {
 			return errors.New("cannot set context to an empty string")
 		}
 
-		context := fmt.Sprintf(format, args...)
-		cfg.context = strings.TrimSpace(context)
+		cfg.context = context
 
 		return nil
 	}

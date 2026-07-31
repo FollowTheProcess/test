@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	go.followtheprocess.codes/hue v1.2.0
-	go.followtheprocess.codes/snapshot v1.0.0
+	go.followtheprocess.codes/snapshot v1.1.0
 )
 
 require (
